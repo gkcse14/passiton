@@ -181,7 +181,7 @@ class _JourneysScreenState extends State<JourneysScreen>
           ),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
