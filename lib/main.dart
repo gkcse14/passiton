@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sizer/sizer.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sizer/sizer.dart';
 
 import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
-import './theme/app_theme.dart';
+import './core/repositories/gift_repository.dart';
 import './routes/app_routes.dart';
+import './theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialise gift repository (seeds catalogue once)
+  await GiftRepository().init();
 
   bool hasShownError = false;
 

@@ -3,9 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/data/sample_data.dart';
+import '../../core/data/gift_catalogue.dart';
 import '../../core/models/journey_models.dart';
+import '../../core/models/gift_models.dart';
+import '../../core/repositories/gift_repository.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
+import '../gifts/widgets/gift_artwork_widget.dart';
 import './widgets/demo_controls_widget.dart';
 import './widgets/profile_header_widget.dart';
 import './widgets/profile_stats_widget.dart';
@@ -19,14 +23,15 @@ class YouScreen extends StatefulWidget {
 }
 
 class _YouScreenState extends State<YouScreen> {
-  // TODO: Replace with Riverpod for production
   String _displayName = 'Traveller';
-  String _themeMode = 'System'; // System / Light / Dark
+  String _themeMode = 'System';
   bool _haptics = true;
   bool _reduceMotion = false;
   String _defaultLocation = 'city';
   late List<JourneyObject> _journeys;
   late List<JourneyStop> _stops;
+  final _giftRepo = GiftRepository();
+  List<GiftContribution> _giftsSent = [];
 
   @override
   void initState() {
@@ -34,6 +39,7 @@ class _YouScreenState extends State<YouScreen> {
     _journeys = sampleJourneyMaps.map(JourneyObject.fromMap).toList();
     _stops = sampleStopMaps.map(JourneyStop.fromMap).toList();
     _loadPrefs();
+    _loadGifts();
   }
 
   Future<void> _loadPrefs() async {
@@ -44,6 +50,12 @@ class _YouScreenState extends State<YouScreen> {
       _haptics = prefs.getBool('haptics') ?? true;
       _reduceMotion = prefs.getBool('reduce_motion') ?? false;
       _defaultLocation = prefs.getString('default_location') ?? 'city';
+    });
+  }
+
+  void _loadGifts() {
+    setState(() {
+      _giftsSent = _giftRepo.getGiftsSentByUser(kLocalUserId);
     });
   }
 
@@ -169,6 +181,7 @@ class _YouScreenState extends State<YouScreen> {
         _themeMode = 'System';
         _haptics = true;
         _reduceMotion = false;
+        _giftsSent = [];
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -256,6 +269,187 @@ class _YouScreenState extends State<YouScreen> {
     );
   }
 
+  void _showGiftsSent(bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Row(
+                children: [
+                  Text(
+                    'Gifts you\'ve sent',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 16),
+            Expanded(
+              child: _giftsSent.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.card_giftcard_outlined,
+                            size: 48,
+                            color: isDark
+                                ? AppTheme.textSecondaryDark
+                                : AppTheme.textSecondaryLight,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No gifts sent yet.',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Open a journey and add a gift!',
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppTheme.textSecondaryDark
+                                  : AppTheme.textSecondaryLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: _giftsSent.length,
+                      itemBuilder: (context, i) {
+                        final c = _giftsSent[i];
+                        final item = catalogItemById(c.catalogueGiftId);
+                        final journey = _journeys.firstWhere(
+                          (j) => j.id == c.objectId,
+                          orElse: () => _journeys.first,
+                        );
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            children: [
+                              item != null
+                                  ? GiftArtworkWidget(item: item, size: 40)
+                                  : Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.borderLight,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item?.name ?? 'Unknown gift',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleSmall,
+                                    ),
+                                    Text(
+                                      'For ${journey.name}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: isDark
+                                                ? AppTheme.textSecondaryDark
+                                                : AppTheme.textSecondaryLight,
+                                          ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (c.message != null)
+                                      Text(
+                                        '"${c.message}"',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              fontStyle: FontStyle.italic,
+                                              color: isDark
+                                                  ? AppTheme.textSecondaryDark
+                                                  : AppTheme.textSecondaryLight,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    _formatDate(c.createdAt),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: isDark
+                                              ? AppTheme.textSecondaryDark
+                                              : AppTheme.textSecondaryLight,
+                                        ),
+                                  ),
+                                  if (c.source == GiftSource.demoPaid ||
+                                      c.source == GiftSource.seededDemo)
+                                    const Text(
+                                      'Demo',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppTheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[dt.month - 1]} ${dt.day}';
+  }
+
   static const List<String> _howSteps = [
     'Create an object — a potato, heart, star, or any traveller.',
     'Pass it along to someone — they join and leave a message.',
@@ -303,10 +497,37 @@ class _YouScreenState extends State<YouScreen> {
               ),
             ),
           ),
+          // Gifts section
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: SettingsSectionWidget(
+                title: 'Gifts',
+                isDark: isDark,
+                items: [
+                  SettingsItem(
+                    icon: Icons.card_giftcard_rounded,
+                    label: 'Gifts you\'ve sent',
+                    subtitle: _giftsSent.isEmpty
+                        ? 'None yet'
+                        : '${_giftsSent.length} gift${_giftsSent.length == 1 ? '' : 's'}',
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: isDark
+                          ? AppTheme.textSecondaryDark
+                          : AppTheme.textSecondaryLight,
+                    ),
+                    onTap: () => _showGiftsSent(isDark),
+                  ),
+                ],
+              ),
+            ),
+          ),
           // Appearance section
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: SettingsSectionWidget(
                 title: 'Appearance',
                 isDark: isDark,

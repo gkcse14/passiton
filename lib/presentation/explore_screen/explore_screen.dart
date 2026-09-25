@@ -3,9 +3,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/data/sample_data.dart';
 import '../../core/models/journey_models.dart';
+import '../../core/models/gift_models.dart';
+import '../../core/repositories/gift_repository.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import '../onboarding_screen/widgets/object_artwork_widget.dart';
+import '../gifts/widgets/gift_artwork_widget.dart';
 import './widgets/explore_journey_card_widget.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -16,7 +19,6 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class _ExploreScreenState extends State<ExploreScreen> {
-  // TODO: Replace with Riverpod for production
   late List<JourneyObject> _allJourneys;
   late List<JourneyStop> _allStops;
   List<JourneyObject> _filtered = [];
@@ -24,6 +26,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   ObjectType? _filterType;
   final bool _isLoading = false;
   final TextEditingController _searchController = TextEditingController();
+  final _giftRepo = GiftRepository();
 
   @override
   void initState() {
@@ -75,6 +78,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
       .where((j) => DateTime.now().difference(j.createdAt).inDays < 60)
       .take(4)
       .toList();
+
+  /// Journeys with at least one gift, sorted by supporter count
+  List<JourneyObject> get _lovedJourneys {
+    final eligibleIds = _allJourneys
+        .where((j) => j.state == JourneyState.active && j.isSampleData)
+        .map((j) => j.id)
+        .toList();
+    final ranked = _giftRepo.rankByMostSupported(eligibleIds);
+    return ranked
+        .where((id) => _giftRepo.getSummary(id).totalGifts > 0)
+        .map(
+          (id) => _allJourneys.firstWhere(
+            (j) => j.id == id,
+            orElse: () => _allJourneys.first,
+          ),
+        )
+        .take(6)
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +157,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
           if (_searchQuery.isNotEmpty || _filterType != null)
             _buildSearchResults(isDark, theme)
           else ...[
+            // Loved along the way section
+            if (_lovedJourneys.isNotEmpty) ...[
+              SliverToBoxAdapter(child: _buildLovedHeader(isDark, theme)),
+              SliverToBoxAdapter(
+                child: _buildLovedSection(_lovedJourneys, isDark),
+              ),
+            ],
             // Featured section
             SliverToBoxAdapter(
               child: _buildSectionHeader('Featured adventures', isDark, theme),
@@ -173,6 +202,61 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ],
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLovedHeader(bool isDark, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.favorite_rounded,
+                size: 16,
+                color: AppTheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text('Loved along the way', style: theme.textTheme.titleLarge),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Little journeys with a lot of support.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isDark
+                  ? AppTheme.textSecondaryDark
+                  : AppTheme.textSecondaryLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLovedSection(List<JourneyObject> journeys, bool isDark) {
+    return SizedBox(
+      height: 200,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: journeys.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, i) {
+          final journey = journeys[i];
+          final summary = _giftRepo.getSummary(journey.id);
+          return _LovedJourneyCard(
+            journey: journey,
+            stops: _allStops,
+            summary: summary,
+            isDark: isDark,
+            onTap: () =>
+                context.push(AppRoutes.journeyDetailScreen, extra: journey.id),
+          );
+        },
       ),
     );
   }
@@ -380,6 +464,135 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
         );
       }, childCount: _filtered.length),
+    );
+  }
+}
+
+class _LovedJourneyCard extends StatelessWidget {
+  final JourneyObject journey;
+  final List<JourneyStop> stops;
+  final JourneyGiftSummary summary;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _LovedJourneyCard({
+    required this.journey,
+    required this.stops,
+    required this.summary,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 200,
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: journey.type.accentColor.withAlpha(80)),
+          boxShadow: [
+            BoxShadow(
+              color: journey.type.accentColor.withAlpha(20),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                ObjectArtworkWidget(type: journey.type, size: 40),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.favorite_rounded,
+                        size: 10,
+                        color: AppTheme.primary,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${summary.distinctSupporters}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              journey.name,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppTheme.textPrimaryDark
+                    : AppTheme.textPrimaryLight,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              journey.mission,
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            // Gift preview
+            if (summary.previewItems.isNotEmpty)
+              Row(
+                children: [
+                  ...summary.previewItems
+                      .take(3)
+                      .map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: GiftArtworkWidget(item: item, size: 22),
+                        ),
+                      ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${summary.distinctSupporters} supporter${summary.distinctSupporters == 1 ? '' : 's'} · ${summary.totalGifts} gift${summary.totalGifts == 1 ? '' : 's'}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark
+                          ? AppTheme.textSecondaryDark
+                          : AppTheme.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

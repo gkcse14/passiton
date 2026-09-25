@@ -3,8 +3,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/data/sample_data.dart';
 import '../../core/models/journey_models.dart';
+import '../../core/models/gift_models.dart';
+import '../../core/repositories/gift_repository.dart';
 import '../../theme/app_theme.dart';
 import '../onboarding_screen/widgets/object_artwork_widget.dart';
+import '../gifts/gift_catalogue_sheet.dart';
+import '../gifts/gifts_and_support_screen.dart';
+import '../gifts/widgets/gift_artwork_widget.dart';
 import './widgets/journey_map_widget.dart';
 import './widgets/journey_stats_widget.dart';
 import './widgets/journey_timeline_widget.dart';
@@ -20,12 +25,13 @@ class JourneyDetailScreen extends StatefulWidget {
 
 class _JourneyDetailScreenState extends State<JourneyDetailScreen>
     with SingleTickerProviderStateMixin {
-  // TODO: Replace with Riverpod for production
   late JourneyObject _journey;
   late List<JourneyStop> _stops;
   late TabController _tabController;
   bool _isFollowing = false;
   bool _hasJoined = false;
+  final _giftRepo = GiftRepository();
+  JourneyGiftSummary? _giftSummary;
 
   @override
   void initState() {
@@ -47,9 +53,8 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
             .toList()
           ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     _isFollowing = _journey.isFollowed;
-    _hasJoined = _stops.any(
-      (s) => s.participantId == kLocalUserId && !s.isOrigin,
-    );
+    _hasJoined = _stops.any((s) => s.participantId == kLocalUserId);
+    _giftSummary = _giftRepo.getSummary(_journey.id);
   }
 
   @override
@@ -69,6 +74,70 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
       backgroundColor: Colors.transparent,
       builder: (_) => PassItOnSheetWidget(journey: _journey, stops: _stops),
     );
+  }
+
+  void _openGiftCatalogue() {
+    final isActive = _journey.state == JourneyState.active;
+    if (!isActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This journey is archived. Gifts can be viewed but not added.',
+          ),
+        ),
+      );
+      return;
+    }
+    if (!_hasJoined) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Join this journey first to add a gift.')),
+      );
+      return;
+    }
+    final myStop = _stops.firstWhere(
+      (s) => s.participantId == kLocalUserId,
+      orElse: () => _stops.first,
+    );
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => GiftCatalogueSheet(
+        journey: _journey,
+        participantId: kLocalUserId,
+        participantName: kLocalUserName,
+        participantStopId: myStop.id,
+        hasJoined: _hasJoined,
+      ),
+    ).then(
+      (_) => setState(() => _giftSummary = _giftRepo.getSummary(_journey.id)),
+    );
+  }
+
+  void _openGiftsScreen() {
+    final myStop = _stops.firstWhere(
+      (s) => s.participantId == kLocalUserId,
+      orElse: () => _stops.isNotEmpty ? _stops.first : _stops.first,
+    );
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (_) => GiftsAndSupportScreen(
+              journey: _journey,
+              participantId: kLocalUserId,
+              participantName: kLocalUserName,
+              participantStopId:
+                  _stops.any((s) => s.participantId == kLocalUserId)
+                  ? myStop.id
+                  : null,
+              hasJoined: _hasJoined,
+            ),
+          ),
+        )
+        .then(
+          (_) =>
+              setState(() => _giftSummary = _giftRepo.getSummary(_journey.id)),
+        );
   }
 
   @override
@@ -92,6 +161,8 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
               child: JourneyStatsWidget(stats: stats, journey: _journey),
             ),
           ),
+          // Gifts & Support section
+          SliverToBoxAdapter(child: _buildGiftsSection(theme, isDark)),
           SliverPersistentHeader(
             pinned: true,
             delegate: _TabBarDelegate(
@@ -127,6 +198,174 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
         ),
       ),
       bottomNavigationBar: _buildBottomActions(isDark, bottomPadding),
+    );
+  }
+
+  Widget _buildGiftsSection(ThemeData theme, bool isDark) {
+    final summary = _giftSummary;
+    final isActive = _journey.state == JourneyState.active;
+    final hasGifts = summary != null && summary.totalGifts > 0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.card_giftcard_rounded,
+                  size: 16,
+                  color: AppTheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text('Gifts & support', style: theme.textTheme.titleSmall),
+                const Spacer(),
+                if (hasGifts)
+                  GestureDetector(
+                    onTap: _openGiftsScreen,
+                    child: Text(
+                      'View all',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            if (!hasGifts) ...[
+              Text('No gifts yet.', style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 3),
+              Text(
+                'Leave a little something for its adventure.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondaryLight,
+                ),
+              ),
+            ] else ...[
+              Text(
+                '${summary.totalGifts} gift${summary.totalGifts == 1 ? '' : 's'} · ${summary.distinctSupporters} supporter${summary.distinctSupporters == 1 ? '' : 's'}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondaryLight,
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Preview illustrations
+              Row(
+                children: [
+                  ...summary.previewItems.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GiftArtworkWidget(item: item, size: 36),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            // Action button
+            if (!isActive)
+              Text(
+                'This journey is archived. Gifts can be viewed but not added.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondaryLight,
+                ),
+              )
+            else if (!_hasJoined)
+              GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Join this journey to add a gift.'),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.primary.withAlpha(80)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(
+                        Icons.card_giftcard_rounded,
+                        size: 15,
+                        color: AppTheme.primary,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Join to add a gift',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: _openGiftCatalogue,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.primary.withAlpha(80)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(
+                        Icons.card_giftcard_rounded,
+                        size: 15,
+                        color: AppTheme.primary,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Add a gift',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -314,7 +553,6 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
       ),
       child: Row(
         children: [
-          // Follow button
           GestureDetector(
             onTap: _toggleFollow,
             child: AnimatedContainer(
@@ -346,7 +584,6 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
             ),
           ),
           const SizedBox(width: 12),
-          // Primary action
           Expanded(
             child: SizedBox(
               height: 48,

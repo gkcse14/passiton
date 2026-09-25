@@ -100,7 +100,7 @@ class AppTheme {
         ),
       ),
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: AppBarThemeData(
       backgroundColor: backgroundLight,
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -111,7 +111,7 @@ class AppTheme {
       ),
       iconTheme: const IconThemeData(color: textPrimaryLight),
     ),
-    inputDecorationTheme: InputDecorationTheme(
+    inputDecorationTheme: InputDecorationThemeData(
       filled: true,
       fillColor: surfaceLight,
       border: OutlineInputBorder(
@@ -241,7 +241,7 @@ class AppTheme {
         ),
       ),
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: AppBarThemeData(
       backgroundColor: backgroundDark,
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -252,7 +252,7 @@ class AppTheme {
       ),
       iconTheme: const IconThemeData(color: textPrimaryDark),
     ),
-    inputDecorationTheme: InputDecorationTheme(
+    inputDecorationTheme: InputDecorationThemeData(
       filled: true,
       fillColor: surfaceDark,
       border: OutlineInputBorder(
