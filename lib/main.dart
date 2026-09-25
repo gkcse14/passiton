@@ -6,6 +6,7 @@ import 'package:sizer/sizer.dart';
 import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
 import './core/repositories/gift_repository.dart';
+import './core/theme_notifier.dart';
 import './routes/app_routes.dart';
 import './theme/app_theme.dart';
 
@@ -14,6 +15,9 @@ void main() async {
 
   // Initialise gift repository (seeds catalogue once)
   await GiftRepository().init();
+
+  // Load persisted theme mode before first frame
+  await initThemeMode();
 
   bool hasShownError = false;
 
@@ -48,23 +52,28 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Sizer(
       builder: (context, orientation, screenType) {
-        return MaterialApp.router(
-          title: 'passiton',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.light,
-          // 🚨 CRITICAL: NEVER REMOVE OR MODIFY
-          builder: (context, child) {
-            return MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.linear(1.0)),
-              child: child!,
+        return ValueListenableBuilder<ThemeMode>(
+          valueListenable: themeModeNotifier,
+          builder: (context, themeMode, _) {
+            return MaterialApp.router(
+              title: 'passiton',
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeMode,
+              // 🚨 CRITICAL: NEVER REMOVE OR MODIFY
+              builder: (context, child) {
+                return MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: TextScaler.linear(1.0)),
+                  child: child!,
+                );
+              },
+              // 🚨 END CRITICAL SECTION
+              debugShowCheckedModeBanner: false,
+              routerConfig: appRouter,
             );
           },
-          // 🚨 END CRITICAL SECTION
-          debugShowCheckedModeBanner: false,
-          routerConfig: appRouter,
         );
       },
     );

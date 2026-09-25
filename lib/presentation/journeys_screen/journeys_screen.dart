@@ -162,18 +162,26 @@ class _JourneysScreenState extends State<JourneysScreen>
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(AppRoutes.createJourneyScreen),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        icon: const Icon(Icons.add_rounded, size: 20),
-        label: const Text(
-          'New journey',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).padding.bottom + 80,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: FloatingActionButton.extended(
+          onPressed: () => context.push(AppRoutes.createJourneyScreen),
+          backgroundColor: AppTheme.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          icon: const Icon(Icons.add_rounded, size: 20),
+          label: const Text(
+            'New journey',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+        ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 

@@ -14,6 +14,8 @@ import './widgets/demo_controls_widget.dart';
 import './widgets/profile_header_widget.dart';
 import './widgets/profile_stats_widget.dart';
 import './widgets/settings_section_widget.dart';
+import '../../core/modal_notifier.dart';
+import '../../core/theme_notifier.dart';
 
 class YouScreen extends StatefulWidget {
   const YouScreen({super.key});
@@ -81,7 +83,7 @@ class _YouScreenState extends State<YouScreen> {
 
   void _editDisplayName() {
     final controller = TextEditingController(text: _displayName);
-    showModalBottomSheet(
+    showManagedModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -153,7 +155,7 @@ class _YouScreenState extends State<YouScreen> {
   }
 
   Future<void> _confirmReset() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showManagedDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Reset app data?'),
@@ -192,7 +194,7 @@ class _YouScreenState extends State<YouScreen> {
 
   void _showHowJourneysWork() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
+    showManagedModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -270,7 +272,7 @@ class _YouScreenState extends State<YouScreen> {
   }
 
   void _showGiftsSent(bool isDark) {
-    showModalBottomSheet(
+    showManagedModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -541,6 +543,7 @@ class _YouScreenState extends State<YouScreen> {
                       onChanged: (v) {
                         setState(() => _themeMode = v);
                         _savePrefs();
+                        saveThemeMode(v);
                       },
                     ),
                   ),
@@ -737,7 +740,7 @@ class _ThemeSelector extends StatelessWidget {
   }
 
   void _showPicker(BuildContext context) {
-    showModalBottomSheet(
+    showManagedModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) {
@@ -824,7 +827,7 @@ class _LocationSelector extends StatelessWidget {
   }
 
   void _showPicker(BuildContext context) {
-    showModalBottomSheet(
+    showManagedModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) {

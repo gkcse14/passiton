@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/modal_notifier.dart';
 import '../../../core/models/gift_models.dart';
 import '../../../core/models/journey_models.dart';
 import '../../../core/repositories/gift_repository.dart';
@@ -40,7 +41,7 @@ class _GiftCatalogueSheetState extends State<GiftCatalogueSheet> {
   @override
   void initState() {
     super.initState();
-    _catalogue = _repo.getCatalogue()
+    _catalogue = List<GiftCatalogItem>.from(_repo.getCatalogue())
       ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
   }
 
@@ -70,7 +71,7 @@ class _GiftCatalogueSheetState extends State<GiftCatalogueSheet> {
   void _onContinue() {
     if (_selected == null) return;
     Navigator.of(context).pop();
-    showModalBottomSheet(
+    showManagedModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -501,7 +502,7 @@ class _GiftConfirmationSheetState extends State<GiftConfirmationSheet> {
 
   void _changeGift() {
     Navigator.of(context).pop();
-    showModalBottomSheet(
+    showManagedModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -558,7 +559,7 @@ class _GiftConfirmationSheetState extends State<GiftConfirmationSheet> {
 
     if (result == GiftAddResult.success || result == GiftAddResult.duplicate) {
       Navigator.of(context).pop();
-      showModalBottomSheet(
+      showManagedModalBottomSheet(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,

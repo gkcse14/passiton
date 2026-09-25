@@ -5,6 +5,7 @@ import '../../core/data/sample_data.dart';
 import '../../core/models/journey_models.dart';
 import '../../core/models/gift_models.dart';
 import '../../core/repositories/gift_repository.dart';
+import '../../core/modal_notifier.dart';
 import '../../theme/app_theme.dart';
 import '../onboarding_screen/widgets/object_artwork_widget.dart';
 import '../gifts/gift_catalogue_sheet.dart';
@@ -68,7 +69,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
   }
 
   void _showPassItOnSheet() {
-    showModalBottomSheet(
+    showManagedModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -98,7 +99,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
       (s) => s.participantId == kLocalUserId,
       orElse: () => _stops.first,
     );
-    showModalBottomSheet(
+    showManagedModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
