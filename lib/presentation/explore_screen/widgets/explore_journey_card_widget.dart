@@ -54,7 +54,7 @@ class ExploreJourneyCardWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
-                  child: ObjectArtworkWidget(type: journey.type, size: 38),
+                  child: ObjectArtworkWidget(type: journey.type, size: 54),
                 ),
               ),
               const SizedBox(width: 12),

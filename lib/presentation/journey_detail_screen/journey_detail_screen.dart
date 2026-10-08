@@ -372,7 +372,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
 
   Widget _buildSliverAppBar(ThemeData theme, bool isDark, bool scrolled) {
     return SliverAppBar(
-      expandedHeight: 200,
+      expandedHeight: 244,
       pinned: true,
       backgroundColor: isDark
           ? AppTheme.backgroundDark
@@ -441,7 +441,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
           child: Center(
             child: Hero(
               tag: 'object-artwork-${_journey.id}',
-              child: ObjectArtworkWidget(type: _journey.type, size: 120),
+              child: ObjectShowcase(type: _journey.type, size: 206),
             ),
           ),
         ),

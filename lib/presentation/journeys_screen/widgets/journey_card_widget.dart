@@ -74,7 +74,7 @@ class JourneyCardWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
-                    child: ObjectArtworkWidget(type: journey.type, size: 40),
+                    child: ObjectArtworkWidget(type: journey.type, size: 54),
                   ),
                 ),
               ),

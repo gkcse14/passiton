@@ -162,7 +162,7 @@ class _JourneyPreviewWidgetState extends State<JourneyPreviewWidget> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                ObjectArtworkWidget(type: widget.objectType, size: 80),
+                ObjectShowcase(type: widget.objectType, size: 98),
               ],
             ),
           ),

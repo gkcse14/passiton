@@ -100,33 +100,34 @@ class FeaturedJourneyCardWidget extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Row(
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
                       children: [
                         _statChip(
                           Icons.people_rounded,
                           '${stats.people}',
                           'people',
                         ),
-                        const SizedBox(width: 12),
                         _statChip(
                           Icons.public_rounded,
                           '${stats.countries}',
                           'countries',
                         ),
-                        if (journey.goalType == GoalType.countries &&
-                            journey.goalTarget != null) ...[
-                          const SizedBox(width: 8),
-                          _goalProgress(stats.countries, journey.goalTarget!),
-                        ],
                       ],
                     ),
+                    if (journey.goalType == GoalType.countries &&
+                        journey.goalTarget != null) ...[
+                      const SizedBox(height: 10),
+                      _goalProgress(stats.countries, journey.goalTarget!),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(width: 16),
               Hero(
                 tag: 'object-artwork-${journey.id}',
-                child: ObjectArtworkWidget(type: journey.type, size: 80),
+                child: ObjectShowcase(type: journey.type, size: 98),
               ),
             ],
           ),
@@ -137,6 +138,7 @@ class FeaturedJourneyCardWidget extends StatelessWidget {
 
   Widget _statChip(IconData icon, String value, String label) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: Colors.white54),
         const SizedBox(width: 4),
@@ -154,34 +156,32 @@ class FeaturedJourneyCardWidget extends StatelessWidget {
 
   Widget _goalProgress(int current, int target) {
     final progress = (current / target).clamp(0.0, 1.0);
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                '$current / $target countries',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              '$current / $target countries',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.white24,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
-              minHeight: 4,
             ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.white24,
+            valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+            minHeight: 4,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

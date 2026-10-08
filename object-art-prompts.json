@@ -1,0 +1,43 @@
+{
+  "generator": "Built-in image_gen tool",
+  "stylePrompt": "Use case: stylized-concept. Asset type: production transparent 3D collectible for Pass It On, a warm terracotta and forest-green mobile app about passing small objects around the world. Premium physically based studio render, tactile realistic materials, soft upper-left key light, warm rim lighting, subtle ambient occlusion, beautiful sculpted form and real depth. Single centered object at three-quarter view, occupies 78% of square canvas, fully visible with generous safe margins, crisp silhouette even at 48 pixels. Genuinely transparent background and soft contact shadow only. No text, logos, watermark, UI, border, backdrop or pedestal.",
+  "assets": [
+    {
+      "file": "assets/images/object-potato-3d.webp",
+      "subjectPrompt": "A charming little golden-brown potato character with realistic fine speckled skin, glossy small dark eyes, a friendly subtle smile, tiny feet and a fresh two-leaf green sprout. Sophisticated animated-film character quality, warm and lovable.",
+      "fullPrompt": "Use case: stylized-concept. Asset type: production transparent 3D collectible for Pass It On, a warm terracotta and forest-green mobile app about passing small objects around the world. Premium physically based studio render, tactile realistic materials, soft upper-left key light, warm rim lighting, subtle ambient occlusion, beautiful sculpted form and real depth. Single centered object at three-quarter view, occupies 78% of square canvas, fully visible with generous safe margins, crisp silhouette even at 48 pixels. Genuinely transparent background and soft contact shadow only. No text, logos, watermark, UI, border, backdrop or pedestal. Subject: A charming little golden-brown potato character with realistic fine speckled skin, glossy small dark eyes, a friendly subtle smile, tiny feet and a fresh two-leaf green sprout. Sophisticated animated-film character quality, warm and lovable.",
+      "transparentBackground": true
+    },
+    {
+      "file": "assets/images/object-heart-3d.webp",
+      "subjectPrompt": "A single plump coral-red heart collectible sculpted in polished translucent rose ceramic, luminous subsurface scattering, a beautiful soft specular highlight. Elegant tactile object, no face.",
+      "fullPrompt": "Use case: stylized-concept. Asset type: production transparent 3D collectible for Pass It On, a warm terracotta and forest-green mobile app about passing small objects around the world. Premium physically based studio render, tactile realistic materials, soft upper-left key light, warm rim lighting, subtle ambient occlusion, beautiful sculpted form and real depth. Single centered object at three-quarter view, occupies 78% of square canvas, fully visible with generous safe margins, crisp silhouette even at 48 pixels. Genuinely transparent background and soft contact shadow only. No text, logos, watermark, UI, border, backdrop or pedestal. Subject: A single plump coral-red heart collectible sculpted in polished translucent rose ceramic, luminous subsurface scattering, a beautiful soft specular highlight. Elegant tactile object, no face.",
+      "transparentBackground": true
+    },
+    {
+      "file": "assets/images/object-lotus-3d.webp",
+      "subjectPrompt": "A single blooming lavender-pink lotus flower with layered dimensional satin petals, fine petal veins and a warm golden center, resting on a small sculpted green leaf. Botanically inspired and elegant.",
+      "fullPrompt": "Use case: stylized-concept. Asset type: production transparent 3D collectible for Pass It On, a warm terracotta and forest-green mobile app about passing small objects around the world. Premium physically based studio render, tactile realistic materials, soft upper-left key light, warm rim lighting, subtle ambient occlusion, beautiful sculpted form and real depth. Single centered object at three-quarter view, occupies 78% of square canvas, fully visible with generous safe margins, crisp silhouette even at 48 pixels. Genuinely transparent background and soft contact shadow only. No text, logos, watermark, UI, border, backdrop or pedestal. Subject: A single blooming lavender-pink lotus flower with layered dimensional satin petals, fine petal veins and a warm golden center, resting on a small sculpted green leaf. Botanically inspired and elegant.",
+      "transparentBackground": true
+    },
+    {
+      "file": "assets/images/object-plane-3d.webp",
+      "subjectPrompt": "A folded sky-blue paper airplane in flight, premium thick paper with fine visible fibers, crisp origami folds, slightly curved wings and realistic edges. Elegant dynamic ascending angle, entire plane visible.",
+      "fullPrompt": "Use case: stylized-concept. Asset type: production transparent 3D collectible for Pass It On, a warm terracotta and forest-green mobile app about passing small objects around the world. Premium physically based studio render, tactile realistic materials, soft upper-left key light, warm rim lighting, subtle ambient occlusion, beautiful sculpted form and real depth. Single centered object at three-quarter view, occupies 78% of square canvas, fully visible with generous safe margins, crisp silhouette even at 48 pixels. Genuinely transparent background and soft contact shadow only. No text, logos, watermark, UI, border, backdrop or pedestal. Subject: A folded sky-blue paper airplane in flight, premium thick paper with fine visible fibers, crisp origami folds, slightly curved wings and realistic edges. Elegant dynamic ascending angle, entire plane visible.",
+      "transparentBackground": true
+    },
+    {
+      "file": "assets/images/object-star-3d.webp",
+      "subjectPrompt": "A plump five-point golden star collectible, brushed champagne-gold metal with polished beveled edges, warm specular reflections and beautifully sculpted rounded depth. No face.",
+      "fullPrompt": "Use case: stylized-concept. Asset type: production transparent 3D collectible for Pass It On, a warm terracotta and forest-green mobile app about passing small objects around the world. Premium physically based studio render, tactile realistic materials, soft upper-left key light, warm rim lighting, subtle ambient occlusion, beautiful sculpted form and real depth. Single centered object at three-quarter view, occupies 78% of square canvas, fully visible with generous safe margins, crisp silhouette even at 48 pixels. Genuinely transparent background and soft contact shadow only. No text, logos, watermark, UI, border, backdrop or pedestal. Subject: A plump five-point golden star collectible, brushed champagne-gold metal with polished beveled edges, warm specular reflections and beautifully sculpted rounded depth. No face.",
+      "transparentBackground": true
+    },
+    {
+      "file": "assets/images/object-seedling-3d.webp",
+      "subjectPrompt": "A tiny fresh emerald-green seedling with two unfurling leaves and detailed natural veins, slender curved stem growing from a small rounded mound of textured earth. Realistic botanical materials, joyful and delicate.",
+      "fullPrompt": "Use case: stylized-concept. Asset type: production transparent 3D collectible for Pass It On, a warm terracotta and forest-green mobile app about passing small objects around the world. Premium physically based studio render, tactile realistic materials, soft upper-left key light, warm rim lighting, subtle ambient occlusion, beautiful sculpted form and real depth. Single centered object at three-quarter view, occupies 78% of square canvas, fully visible with generous safe margins, crisp silhouette even at 48 pixels. Genuinely transparent background and soft contact shadow only. No text, logos, watermark, UI, border, backdrop or pedestal. Subject: A tiny fresh emerald-green seedling with two unfurling leaves and detailed natural veins, slender curved stem growing from a small rounded mound of textured earth. Realistic botanical materials, joyful and delicate.",
+      "transparentBackground": true
+    }
+  ],
+  "notes": "Six journey objects only. Gift catalogue artwork is unchanged. Renders use alpha-preserving WebP at up to 1024px."
+}

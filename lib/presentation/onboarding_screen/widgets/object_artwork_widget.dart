@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/journey_models.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/immersive_artwork.dart';
 
 // Polished scalable Flutter illustrations for each object type
 // Consistent soft dimensional style: rounded forms, gentle highlights
@@ -8,21 +9,61 @@ import '../../../theme/app_theme.dart';
 class ObjectArtworkWidget extends StatelessWidget {
   final ObjectType type;
   final double size;
+  final bool? animate;
 
   const ObjectArtworkWidget({
     required this.type,
     required this.size,
+    this.animate,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(painter: _ObjectPainter(type: type)),
+    final asset = switch (type) {
+      ObjectType.potato => 'object-potato-3d',
+      ObjectType.heart => 'object-heart-3d',
+      ObjectType.lotus => 'object-lotus-3d',
+      ObjectType.paperPlane => 'object-plane-3d',
+      ObjectType.star => 'object-star-3d',
+      ObjectType.seedling => 'object-seedling-3d',
+    };
+    return ImmersiveArtwork(
+      asset: 'assets/images/$asset.webp',
+      size: size,
+      label: '${type.displayName} traveller',
+      animate: animate ?? size >= 64,
+      motion: switch (type) {
+        ObjectType.potato => ArtworkMotion.float,
+        ObjectType.heart => ArtworkMotion.heartbeat,
+        ObjectType.lotus => ArtworkMotion.bloom,
+        ObjectType.paperPlane => ArtworkMotion.glide,
+        ObjectType.star => ArtworkMotion.shimmer,
+        ObjectType.seedling => ArtworkMotion.sway,
+      },
+      fallback: (_) => CustomPaint(painter: _ObjectPainter(type: type)),
     );
   }
+}
+
+/// Larger objects live in a softly lit display space instead of a flat icon tile.
+class ObjectShowcase extends StatelessWidget {
+  final ObjectType type;
+  final double size;
+  final bool? animate;
+  const ObjectShowcase({
+    required this.type,
+    required this.size,
+    this.animate,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) => ArtworkStage(
+    size: size,
+    accent: type.accentColor,
+    child: ObjectArtworkWidget(type: type, size: size * 0.91, animate: animate),
+  );
 }
 
 class _ObjectPainter extends CustomPainter {
