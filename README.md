@@ -10,9 +10,9 @@ same tests and build without deploying. A failed test or build leaves the
 previous website in place. Concurrent updates deploy the latest main commit.
 
 One-time repository setup: open **Settings → Pages**, set **Source** to
-**GitHub Actions**, and save. This private repository needs a GitHub plan that
-supports Pages for private repositories. Do not change repository visibility
-just to enable hosting.
+**GitHub Actions**, and save. The repository is public, so Pages can host it
+without a private-repository plan upgrade. If it is made private later, the
+GitHub plan must support Pages for private repositories.
 
 The default site URL is https://gkcse14.github.io/passiton/. The workflow uses
 `/passiton/` as the base path and Flutter's default hash navigation so refreshing
