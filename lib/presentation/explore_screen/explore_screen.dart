@@ -488,7 +488,7 @@ class _LovedJourneyCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 200,
+        width: 224,
         decoration: BoxDecoration(
           color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
           borderRadius: BorderRadius.circular(20),
@@ -507,7 +507,7 @@ class _LovedJourneyCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                ObjectArtworkWidget(type: journey.type, size: 40),
+                ObjectArtworkWidget(type: journey.type, size: 64),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -682,7 +682,7 @@ class _HorizontalJourneyCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ObjectArtworkWidget(type: journey.type, size: 52),
+            Center(child: ObjectShowcase(type: journey.type, size: 86)),
             const Spacer(),
             Text(
               journey.name,

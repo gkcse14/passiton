@@ -7,6 +7,7 @@ import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
 import './core/repositories/gift_repository.dart';
 import './core/theme_notifier.dart';
+import './core/motion_notifier.dart';
 import './routes/app_routes.dart';
 import './theme/app_theme.dart';
 
@@ -18,6 +19,7 @@ void main() async {
 
   // Load persisted theme mode before first frame
   await initThemeMode();
+  await initMotionPreference();
 
   bool hasShownError = false;
 
@@ -62,11 +64,16 @@ class MyApp extends StatelessWidget {
               themeMode: themeMode,
               // 🚨 CRITICAL: NEVER REMOVE OR MODIFY
               builder: (context, child) {
-                return MediaQuery(
-                  data: MediaQuery.of(
-                    context,
-                  ).copyWith(textScaler: TextScaler.linear(1.0)),
-                  child: child!,
+                return ValueListenableBuilder<bool>(
+                  valueListenable: reduceMotionNotifier,
+                  builder: (context, reduced, _) => MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: TextScaler.linear(1.0),
+                      disableAnimations:
+                          reduced || MediaQuery.disableAnimationsOf(context),
+                    ),
+                    child: child!,
+                  ),
                 );
               },
               // 🚨 END CRITICAL SECTION

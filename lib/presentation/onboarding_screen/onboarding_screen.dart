@@ -17,9 +17,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen>
     with TickerProviderStateMixin {
   // TODO: Replace with Riverpod for production
-  late AnimationController _floatController;
   late AnimationController _entranceController;
-  late Animation<double> _floatAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
@@ -27,18 +25,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void initState() {
     super.initState();
-    _floatController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2800),
-    )..repeat(reverse: true);
-
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    );
-
-    _floatAnimation = Tween<double>(begin: -8, end: 8).animate(
-      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
     );
 
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
@@ -67,8 +56,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _entranceController.value = 1;
+    }
+  }
+
+  @override
   void dispose() {
-    _floatController.dispose();
     _entranceController.dispose();
     super.dispose();
   }
@@ -101,18 +97,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             children: [
               const Spacer(flex: 2),
               // Floating potato hero
-              AnimatedBuilder(
-                animation: _floatAnimation,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, _floatAnimation.value),
-                    child: child,
-                  );
-                },
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: _buildPotatoHero(size),
-                ),
+              ScaleTransition(
+                scale: _scaleAnimation,
+                child: _buildPotatoHero(size),
               ),
               const Spacer(flex: 2),
               // Text content
@@ -135,46 +122,58 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Widget _buildPotatoHero(Size size) {
+    final dimension = (size.width * 0.78)
+        .clamp(180.0, size.height * 0.32)
+        .clamp(180.0, 320.0);
     return SizedBox(
-      width: size.width * 0.55,
-      height: size.width * 0.55,
+      width: dimension,
+      height: dimension,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Outer glow ring
-          Container(
-            width: size.width * 0.52,
-            height: size.width * 0.52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.potatoAccent.withAlpha(20),
+          Positioned.fill(child: CustomPaint(painter: _JourneyOrbitPainter())),
+          ObjectShowcase(type: ObjectType.potato, size: dimension * 0.8),
+          const Positioned(
+            top: 0,
+            right: 2,
+            child: ObjectArtworkWidget(
+              type: ObjectType.paperPlane,
+              size: 66,
+              animate: true,
             ),
           ),
-          // Inner ring
-          Container(
-            width: size.width * 0.42,
-            height: size.width * 0.42,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.potatoAccent.withAlpha(31),
+          const Positioned(
+            bottom: 4,
+            left: 0,
+            child: ObjectArtworkWidget(
+              type: ObjectType.heart,
+              size: 50,
+              animate: true,
             ),
           ),
-          // Artwork
-          ObjectArtworkWidget(type: ObjectType.potato, size: size.width * 0.32),
+          const Positioned(
+            top: 30,
+            left: 0,
+            child: ObjectArtworkWidget(
+              type: ObjectType.star,
+              size: 42,
+              animate: true,
+            ),
+          ),
           // Dotted route markers
           Positioned(
             top: 12,
-            right: 24,
+            right: 90,
             child: _routeMarker(AppTheme.secondary),
           ),
           Positioned(
             bottom: 20,
-            left: 16,
+            left: 90,
             child: _routeMarker(AppTheme.primary),
           ),
           Positioned(
-            top: 40,
-            left: 8,
+            top: 110,
+            left: 4,
             child: _routeMarker(AppTheme.potatoAccent),
           ),
         ],
@@ -325,4 +324,30 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       ],
     );
   }
+}
+
+class _JourneyOrbitPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bounds = Rect.fromCenter(
+      center: size.center(Offset.zero),
+      width: size.width * 0.94,
+      height: size.height * 0.68,
+    );
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.rotate(-0.35);
+    canvas.translate(-size.width / 2, -size.height / 2);
+    canvas.drawOval(
+      bounds,
+      Paint()
+        ..color = AppTheme.potatoAccent.withAlpha(48)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

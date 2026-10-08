@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/models/journey_models.dart';
 import '../../../theme/app_theme.dart';
 import '../../onboarding_screen/widgets/object_artwork_widget.dart';
@@ -43,14 +44,19 @@ class ObjectPickerWidget extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.85,
+            childAspectRatio: MediaQuery.sizeOf(context).width < 350
+                ? 0.70
+                : 0.80,
             children: ObjectType.values.map((type) {
               final isSelected = selectedType == type;
               return _ObjectTile(
                 type: type,
                 isSelected: isSelected,
                 isDark: isDark,
-                onTap: () => onSelect(type),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onSelect(type);
+                },
               );
             }).toList(),
           ),
@@ -99,7 +105,13 @@ class _ObjectTile extends StatelessWidget {
                     offset: const Offset(0, 4),
                   ),
                 ]
-              : [],
+              : [
+                  BoxShadow(
+                    color: type.accentColor.withAlpha(18),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
         ),
         child: Stack(
           children: [
@@ -108,8 +120,26 @@ class _ObjectTile extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ObjectArtworkWidget(type: type, size: 68),
-                  const SizedBox(height: 12),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return AnimatedScale(
+                        scale: isSelected ? 1.06 : 1.0,
+                        duration: MediaQuery.disableAnimationsOf(context)
+                            ? Duration.zero
+                            : const Duration(milliseconds: 350),
+                        curve: Curves.easeOutBack,
+                        child: ObjectShowcase(
+                          type: type,
+                          size: (constraints.maxWidth * 0.88).clamp(
+                            64.0,
+                            108.0,
+                          ),
+                          animate: isSelected,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     type.displayName,
                     style: TextStyle(

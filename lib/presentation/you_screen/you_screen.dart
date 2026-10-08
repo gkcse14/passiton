@@ -16,6 +16,7 @@ import './widgets/profile_stats_widget.dart';
 import './widgets/settings_section_widget.dart';
 import '../../core/modal_notifier.dart';
 import '../../core/theme_notifier.dart';
+import '../../core/motion_notifier.dart';
 
 class YouScreen extends StatefulWidget {
   const YouScreen({super.key});
@@ -62,6 +63,7 @@ class _YouScreenState extends State<YouScreen> {
   }
 
   Future<void> _savePrefs() async {
+    reduceMotionNotifier.value = _reduceMotion;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('display_name', _displayName);
     await prefs.setString('theme_mode', _themeMode);

@@ -1,10 +1,45 @@
 # Flutter
 
+## GitHub Pages deployment
+
+The `Deploy Pass It On to GitHub Pages` workflow runs on every push or merge to
+`main`. It installs Flutter 3.47.2, resolves the committed dependency lockfile,
+runs the widget tests, builds the release web app, and publishes the successful
+build through the `github-pages` environment. Pull requests to `main` run the
+same tests and build without deploying. A failed test or build leaves the
+previous website in place. Concurrent updates deploy the latest main commit.
+
+One-time repository setup: open **Settings → Pages**, set **Source** to
+**GitHub Actions**, and save. The repository is public, so Pages can host it
+without a private-repository plan upgrade. If it is made private later, the
+GitHub plan must support Pages for private repositories.
+
+The default site URL is https://gkcse14.github.io/passiton/. The workflow uses
+`/passiton/` as the base path and Flutter's default hash navigation so refreshing
+an app route works on GitHub Pages. If a custom domain is added, update the
+workflow's `--base-href` argument to `/`.
+
+To redeploy the current main commit, open **Actions → Deploy Pass It On to
+GitHub Pages → Run workflow** and choose `main`. No deployment secret is needed;
+GitHub provides a short-lived token with Pages and OIDC permissions to the
+deployment job.
+
+To validate locally:
+
+```bash
+flutter pub get --enforce-lockfile
+flutter test --no-pub
+flutter build web --release --no-pub --base-href /passiton/
+```
+
+The web app remains a device-local preview: it uses browser storage for its demo
+journeys and preferences. GitHub Pages hosts the app but does not add a backend.
+
 A modern Flutter-based mobile application utilizing the latest mobile development technologies and tools for building responsive cross-platform applications.
 
 ## 📋 Prerequisites
 
-- Flutter SDK (^3.38.4)
+- Flutter SDK (3.47.2, matching CI)
 - Dart SDK
 - Android Studio / VS Code with Flutter extensions
 - Android SDK / Xcode (for iOS development)
