@@ -33,7 +33,16 @@ jobs:
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
 
+      - name: Ensure offline layout-test typography
+        run: |
+          if [ ! -f /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ]; then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends fonts-dejavu-core
+          fi
+
       - name: Run tests
+        env:
+          PASSITON_TEST_FONT: /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
         run: flutter test --no-pub
 
       - name: Build release for the repository path

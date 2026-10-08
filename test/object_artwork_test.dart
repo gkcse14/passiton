@@ -97,11 +97,14 @@ void main() {
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await icons.load();
     // Flutter's default Ahem test font has square glyphs, unlike app fonts.
-    // Use the SDK's bundled Roboto for deterministic, offline layout checks
-    // on Windows and Linux; screenshot captures may supply a specific font.
+    // Use real offline typography: CI supplies a Linux system font and local
+    // captures may override it. Windows can use the SDK's bundled Roboto.
     final artifacts = File(Platform.resolvedExecutable).parent.parent.parent;
+    final ciFont = Platform.environment['PASSITON_TEST_FONT'] ?? '';
     final fontPath = _previewFont.isNotEmpty
         ? _previewFont
+        : ciFont.isNotEmpty
+        ? ciFont
         : '${artifacts.path}/material_fonts/roboto-regular.ttf';
     final bytes = await File(fontPath).readAsBytes();
     final loader = FontLoader('DM Sans')
