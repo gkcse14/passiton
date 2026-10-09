@@ -15,29 +15,45 @@ class StepIndicatorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(totalSteps, (i) {
-        final isCompleted = i < currentStep;
-        final isCurrent = i == currentStep;
-        return Row(
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              width: isCurrent ? 28 : 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: isCompleted || isCurrent
-                    ? AppTheme.primary
-                    : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            if (i < totalSteps - 1) const SizedBox(width: 6),
-          ],
-        );
-      }),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Step ${currentStep + 1} of $totalSteps · ${const ['Choose', 'Your story', 'Ready to go'][currentStep.clamp(0, 2)]}',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: isDark
+                ? AppTheme.textSecondaryDark
+                : AppTheme.textSecondaryLight,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(totalSteps, (i) {
+            final isCompleted = i < currentStep;
+            final isCurrent = i == currentStep;
+            return Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  width: isCurrent ? 28 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: isCompleted || isCurrent
+                        ? AppTheme.primary
+                        : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                if (i < totalSteps - 1) const SizedBox(width: 6),
+              ],
+            );
+          }),
+        ),
+      ],
     );
   }
 }

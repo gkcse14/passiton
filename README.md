@@ -139,6 +139,26 @@ flutter build apk --release
 flutter build ios --release
 ```
 
+## Journeys discovery
+
+Journeys uses optional device location or a chosen city to rank active objects
+within 50 km (expandable to 250 km or everywhere). Only the latest city-visible
+stop with coordinates is eligible. Hidden and country-only stops never reveal an
+earlier location. Distances to city locations are approximate. Device coordinates
+are neither persisted nor published. A manually chosen city is saved.
+
+Creation, saved objects, and joined chapters persist in device-local storage.
+Seeded journeys are labelled **Preview**. There is no shared account/backend yet:
+newly created journeys and participation are not synchronized across users.
+Preview invitations have reload-safe detail links; local-journey invitations
+link to the app rather than implying another device can retrieve local data.
+Known origin cities can appear in local nearby discovery; other origins without
+coordinates remain available in Everywhere. New joined chapters hide location.
+
+Every pull request runs the interaction/repository tests and builds Flutter web.
+Merging to `main` automatically publishes the release to
+[GitHub Pages](https://gkcse14.github.io/passiton/).
+
 ## 🙏 Acknowledgments
 - Built with [Rocket.new](https://rocket.new)
 - Powered by [Flutter](https://flutter.dev) & [Dart](https://dart.dev)

@@ -17,8 +17,8 @@ class PassItOnSheetWidget extends StatelessWidget {
   String get _invitationText =>
       'Meet ${journey.name} ${journey.type.emoji}\n'
       'Its mission: ${journey.mission}\n'
-      'Created with the Pass It On app preview.\n\n'
-      '(Live invitation links will be added when sharing is connected.)';
+      '${journey.isSampleData ? 'Explore this preview journey:' : 'Start your own little adventure with Pass It On:'}\n'
+      'https://gkcse14.github.io/passiton/#/${journey.isSampleData ? 'journey-detail-screen?id=${Uri.encodeComponent(journey.id)}' : 'journeys-screen'}';
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +107,9 @@ class PassItOnSheetWidget extends StatelessWidget {
           const SizedBox(height: 8),
           // Local note
           Text(
-            'Live invitation links will be added when sharing is connected.',
+            journey.isSampleData
+                ? 'This link opens the preview journey. Invite someone to explore it.'
+                : 'Your journey is saved on this device. This invitation links to the app.',
             style: TextStyle(
               fontSize: 11,
               color: isDark
@@ -121,20 +123,33 @@ class PassItOnSheetWidget extends StatelessWidget {
           // Actions
           _ActionButton(
             icon: Icons.copy_rounded,
-            label: 'Copy invitation text',
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: _invitationText));
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Copied to clipboard')),
-              );
+            label: 'Copy invitation',
+            onTap: () async {
+              try {
+                await Clipboard.setData(ClipboardData(text: _invitationText));
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Invitation copied. Make someone’s day.'),
+                  ),
+                );
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Couldn’t copy. Please try again.'),
+                    ),
+                  );
+                }
+              }
             },
             isDark: isDark,
           ),
           const SizedBox(height: 10),
           _ActionButton(
             icon: Icons.preview_rounded,
-            label: 'Preview receiving',
+            label: 'Back to the journey',
             onTap: () => Navigator.pop(context),
             isDark: isDark,
           ),

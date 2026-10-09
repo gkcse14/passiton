@@ -5,6 +5,10 @@ import '../../core/data/sample_data.dart';
 import '../../core/models/journey_models.dart';
 import '../../core/models/gift_models.dart';
 import '../../core/repositories/gift_repository.dart';
+import '../../core/repositories/journey_repository.dart';
+import '../../routes/app_routes.dart';
+import '../journeys_screen/widgets/journey_discovery_widgets.dart';
+import './widgets/join_journey_sheet.dart';
 import '../../core/modal_notifier.dart';
 import '../../theme/app_theme.dart';
 import '../onboarding_screen/widgets/object_artwork_widget.dart';
@@ -31,6 +35,9 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
   late TabController _tabController;
   bool _isFollowing = false;
   bool _hasJoined = false;
+  bool _notFound = false;
+  bool _savingFollow = false;
+  final _journeyRepo = JourneyRepository.instance;
   final _giftRepo = GiftRepository();
   JourneyGiftSummary? _giftSummary;
 
@@ -39,19 +46,20 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadData();
+    _journeyRepo.addListener(_refreshJourney);
+  }
+
+  void _refreshJourney() {
+    if (mounted) setState(_loadData);
   }
 
   void _loadData() {
-    final allJourneys = sampleJourneyMaps.map(JourneyObject.fromMap).toList();
-    _journey = allJourneys.firstWhere(
-      (j) => j.id == widget.journeyId,
-      orElse: () => allJourneys.first,
-    );
+    final found = _journeyRepo.find(widget.journeyId);
+    _notFound = found == null;
+    if (found == null) return;
+    _journey = found;
     _stops =
-        sampleStopMaps
-            .map(JourneyStop.fromMap)
-            .where((s) => s.objectId == widget.journeyId)
-            .toList()
+        _journeyRepo.stops.where((s) => s.objectId == widget.journeyId).toList()
           ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     _isFollowing = _journey.isFollowed;
     _hasJoined = _stops.any((s) => s.participantId == kLocalUserId);
@@ -61,11 +69,38 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _journeyRepo.removeListener(_refreshJourney);
     super.dispose();
   }
 
-  void _toggleFollow() {
-    setState(() => _isFollowing = !_isFollowing);
+  Future<void> _toggleFollow() async {
+    if (_savingFollow) return;
+    setState(() => _savingFollow = true);
+    try {
+      await _journeyRepo.follow(_journey.id, !_isFollowing);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Couldn’t save that change. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingFollow = false);
+    }
+  }
+
+  void _joinJourney() {
+    showManagedModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: JourneyColors(context).surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (_) => JoinJourneySheet(journey: _journey),
+    );
   }
 
   void _showPassItOnSheet() {
@@ -110,16 +145,17 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
         participantStopId: myStop.id,
         hasJoined: _hasJoined,
       ),
-    ).then(
-      (_) => setState(() => _giftSummary = _giftRepo.getSummary(_journey.id)),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() => _giftSummary = _giftRepo.getSummary(_journey.id));
+      }
+    });
   }
 
   void _openGiftsScreen() {
-    final myStop = _stops.firstWhere(
-      (s) => s.participantId == kLocalUserId,
-      orElse: () => _stops.isNotEmpty ? _stops.first : _stops.first,
-    );
+    final myStops = _stops
+        .where((s) => s.participantId == kLocalUserId)
+        .toList();
     Navigator.of(context)
         .push(
           MaterialPageRoute(
@@ -127,22 +163,51 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
               journey: _journey,
               participantId: kLocalUserId,
               participantName: kLocalUserName,
-              participantStopId:
-                  _stops.any((s) => s.participantId == kLocalUserId)
-                  ? myStop.id
-                  : null,
+              participantStopId: myStops.isNotEmpty ? myStops.first.id : null,
               hasJoined: _hasJoined,
             ),
           ),
         )
-        .then(
-          (_) =>
-              setState(() => _giftSummary = _giftRepo.getSummary(_journey.id)),
-        );
+        .then((_) {
+          if (mounted) {
+            setState(() => _giftSummary = _giftRepo.getSummary(_journey.id));
+          }
+        });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_notFound) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const ObjectShowcase(type: ObjectType.paperPlane, size: 150),
+                  const Text(
+                    'This journey isn’t here yet.',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'It may belong to another device. Explore the journeys available here.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 18),
+                  FilledButton(
+                    onPressed: () => context.go(AppRoutes.journeysScreen),
+                    child: const Text('Explore journeys'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final stats = computeStats(_journey.id, _stops);
@@ -372,7 +437,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
 
   Widget _buildSliverAppBar(ThemeData theme, bool isDark, bool scrolled) {
     return SliverAppBar(
-      expandedHeight: 244,
+      expandedHeight: 300,
       pinned: true,
       backgroundColor: isDark
           ? AppTheme.backgroundDark
@@ -399,7 +464,13 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
                 : AppTheme.textPrimaryLight,
           ),
         ),
-        onPressed: () => context.pop(),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go(AppRoutes.journeysScreen);
+          }
+        },
       ),
       actions: [
         IconButton(
@@ -433,15 +504,15 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                _journey.type.accentColor.withAlpha(31),
-                (isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight),
+                _journey.type.accentColor.withAlpha(50),
+                (isDark ? AppTheme.backgroundDark : const Color(0xFFFAF9F5)),
               ],
             ),
           ),
           child: Center(
             child: Hero(
               tag: 'object-artwork-${_journey.id}',
-              child: ObjectShowcase(type: _journey.type, size: 206),
+              child: ObjectShowcase(type: _journey.type, size: 232),
             ),
           ),
         ),
@@ -474,7 +545,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
-                    'Sample',
+                    'Preview',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -555,7 +626,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
       child: Row(
         children: [
           GestureDetector(
-            onTap: _toggleFollow,
+            onTap: _savingFollow ? null : _toggleFollow,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 44,
@@ -589,9 +660,13 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
             child: SizedBox(
               height: 48,
               child: ElevatedButton(
-                onPressed: _showPassItOnSheet,
+                onPressed: _journey.state == JourneyState.archived
+                    ? null
+                    : isOwner || _hasJoined
+                    ? _showPassItOnSheet
+                    : _joinJourney,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: JourneyColors.green,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -599,7 +674,11 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
                   ),
                 ),
                 child: Text(
-                  isOwner || _hasJoined ? 'Pass it on' : 'Join this journey',
+                  _journey.state == JourneyState.archived
+                      ? 'Journey complete'
+                      : isOwner || _hasJoined
+                      ? 'Pass it on'
+                      : 'Join this journey',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,

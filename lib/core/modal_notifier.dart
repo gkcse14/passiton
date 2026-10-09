@@ -12,6 +12,7 @@ Future<T?> showManagedModalBottomSheet<T>({
   Color backgroundColor = Colors.transparent,
   bool isDismissible = true,
   bool enableDrag = true,
+  ShapeBorder? shape,
 }) async {
   modalCount.value++;
   try {
@@ -22,6 +23,7 @@ Future<T?> showManagedModalBottomSheet<T>({
       backgroundColor: backgroundColor,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
+      shape: shape,
     );
     return result;
   } finally {

@@ -60,7 +60,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.journeyDetailScreen,
       pageBuilder: (context, state) {
-        final journeyId = state.extra as String? ?? '';
+        final journeyId =
+            state.uri.queryParameters['id'] ?? state.extra as String? ?? '';
         return CustomTransitionPage(
           key: state.pageKey,
           child: JourneyDetailScreen(journeyId: journeyId),
