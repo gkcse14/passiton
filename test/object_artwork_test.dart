@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:passiton/core/repositories/journey_repository.dart';
+import 'package:passiton/core/services/nearby_journeys.dart';
+import 'package:passiton/presentation/create_journey_screen/create_journey_screen.dart';
+import 'package:passiton/routes/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:passiton/core/models/journey_models.dart';
 import 'package:passiton/core/repositories/gift_repository.dart';
@@ -21,6 +26,12 @@ const _names = ['potato', 'heart', 'lotus', 'plane', 'star', 'seedling'];
 const _captureDir = String.fromEnvironment('PASSITON_PREVIEW_DIR');
 const _previewFont = String.fromEnvironment('PASSITON_PREVIEW_FONT');
 final _boundary = GlobalKey();
+
+class _DeniedLocation extends NearbyLocationService {
+  @override
+  Future<DiscoveryArea> locate() async =>
+      throw LocationIssue('Location denied. Choose a city instead.');
+}
 
 // Offline layout typography; the production theme continues using DM Sans.
 ThemeData _theme(bool dark) => ThemeData(
@@ -69,6 +80,7 @@ Future<void> _render(
       );
     }
   });
+  await tester.pump();
   await tester.pump(const Duration(seconds: 1));
   await tester.pump(const Duration(milliseconds: 50));
   expect(tester.takeException(), isNull, reason: name);
@@ -93,6 +105,7 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await GiftRepository().init();
+    await JourneyRepository.instance.init();
     final icons = FontLoader('MaterialIcons')
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await icons.load();
@@ -207,6 +220,18 @@ void main() {
       'objects',
     );
     await _render(tester, const JourneysScreen(), 'journeys');
+    await _render(
+      tester,
+      const JourneysScreen(),
+      'journeys-compact',
+      size: const Size(320, 640),
+    );
+    await _render(
+      tester,
+      const JourneysScreen(),
+      'journeys-desktop',
+      size: const Size(1200, 900),
+    );
     await _render(tester, const ExploreScreen(), 'explore');
     await _render(
       tester,
@@ -227,5 +252,154 @@ void main() {
       'onboarding-compact',
       size: const Size(320, 640),
     );
+  });
+
+  testWidgets(
+    'location denial still allows choosing a city and saving an object',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final repo = JourneyRepository();
+      await repo.init();
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: _theme(false),
+          home: JourneysScreen(
+            repository: repo,
+            locationService: _DeniedLocation(),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text('Find objects near you'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text('Use my location'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        find.text('Location denied. Choose a city instead.'),
+        findsOneWidget,
+      );
+      await tester.enterText(find.byType(TextField), 'Mumbai');
+      await tester.pump();
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pump();
+      await tester.ensureVisible(find.widgetWithText(ListTile, 'Mumbai'));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.widgetWithText(ListTile, 'Mumbai'));
+      tester.view.resetViewInsets();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Around your corner'), findsOneWidget);
+      final save = find.byTooltip('Save Seeds of Hope');
+      await tester.ensureVisible(save);
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(save);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(repo.find('journey-005')!.isFollowed, isTrue);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('create wizard opens the newly saved journey, not a sample', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: AppRoutes.createJourneyScreen,
+      routes: [
+        GoRoute(
+          path: AppRoutes.createJourneyScreen,
+          builder: (_, _) => const CreateJourneyScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.journeyDetailScreen,
+          builder: (_, state) =>
+              JourneyDetailScreen(journeyId: state.uri.queryParameters['id']!),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp.router(theme: _theme(false), routerConfig: router),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.text('Potato'));
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.enterText(
+      find.byType(TextField).at(0),
+      'Little Test Traveller',
+    );
+    await tester.enterText(
+      find.byType(TextField).at(1),
+      'Share a kind word today',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.text('Start its journey'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    final id = router.routeInformationProvider.value.uri.queryParameters['id'];
+    expect(id, isNotNull);
+    expect(JourneyRepository.instance.find(id!)!.name, 'Little Test Traveller');
+    expect(find.text('Little Test Traveller'), findsWidgets);
+    expect(find.text('Pass it on'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('join adds a chapter and unlocks the pass-it-on action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: _theme(false),
+        home: const JourneyDetailScreen(journeyId: 'journey-006'),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.text('Join this journey'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.enterText(find.byType(TextField), 'A little kindness from me');
+    await tester.ensureVisible(find.text('Join the journey'));
+    await tester.tap(find.text('Join the journey'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('You’re part of the story.'), findsOneWidget);
+    await tester.tap(find.text('See my chapter'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Pass it on'), findsOneWidget);
+    expect(
+      JourneyRepository.instance.stops.any(
+        (s) =>
+            s.objectId == 'journey-006' &&
+            s.message == 'A little kindness from me',
+      ),
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

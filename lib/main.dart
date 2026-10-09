@@ -8,6 +8,7 @@ import '../widgets/custom_error_widget.dart';
 import './core/repositories/gift_repository.dart';
 import './core/theme_notifier.dart';
 import './core/motion_notifier.dart';
+import './core/repositories/journey_repository.dart';
 import './routes/app_routes.dart';
 import './theme/app_theme.dart';
 
@@ -20,6 +21,7 @@ void main() async {
   // Load persisted theme mode before first frame
   await initThemeMode();
   await initMotionPreference();
+  await JourneyRepository.instance.init();
 
   bool hasShownError = false;
 

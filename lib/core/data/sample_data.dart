@@ -116,6 +116,54 @@ final List<Map<String, dynamic>> sampleJourneyMaps = [
 ];
 
 final List<Map<String, dynamic>> sampleStopMaps = [
+  {
+    'id': 'stop-004-origin',
+    'objectId': 'journey-004',
+    'participantId': 'user-sofia',
+    'displayName': 'Sofia Mendez',
+    'message': 'Every fold is a fresh start.',
+    'locationVisibility': 'city',
+    'cityName': 'Buenos Aires',
+    'countryName': 'Argentina',
+    'countryCode': 'AR',
+    'lat': -34.6037,
+    'lng': -58.3816,
+    'createdAt': '2026-05-20T11:15:00.000Z',
+    'isOrigin': true,
+    'isSampleData': true,
+  },
+  {
+    'id': 'stop-005-origin',
+    'objectId': 'journey-005',
+    'participantId': 'user-priya',
+    'displayName': 'Priya Nair',
+    'message': 'A small act of hope, starting in Mumbai.',
+    'locationVisibility': 'city',
+    'cityName': 'Mumbai',
+    'countryName': 'India',
+    'countryCode': 'IN',
+    'lat': 19.0760,
+    'lng': 72.8777,
+    'createdAt': '2026-09-01T08:00:00.000Z',
+    'isOrigin': true,
+    'isSampleData': true,
+  },
+  {
+    'id': 'stop-006-origin',
+    'objectId': 'journey-006',
+    'participantId': 'user-lin',
+    'displayName': 'Lin Xiaomei',
+    'message': 'Breathe in. Pass it on.',
+    'locationVisibility': 'city',
+    'cityName': 'Chengdu',
+    'countryName': 'China',
+    'countryCode': 'CN',
+    'lat': 30.5728,
+    'lng': 104.0668,
+    'createdAt': '2026-07-25T07:00:00.000Z',
+    'isOrigin': true,
+    'isSampleData': true,
+  },
   // Journey 001 — The Internet Potato
   {
     'id': 'stop-001-origin',
@@ -369,9 +417,9 @@ JourneyStats computeStats(String journeyId, List<JourneyStop> stops) {
       .where(
         (s) =>
             s.locationVisibility != LocationVisibility.hidden &&
-            s.countryCode != null,
+            (s.countryCode != null || s.countryName?.trim().isNotEmpty == true),
       )
-      .map((s) => s.countryCode!)
+      .map((s) => s.countryName?.trim().toLowerCase() ?? s.countryCode!)
       .toSet()
       .length;
 

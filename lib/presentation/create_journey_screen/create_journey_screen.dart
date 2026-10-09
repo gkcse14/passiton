@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/models/journey_models.dart';
+import '../../core/repositories/journey_repository.dart';
+import '../../core/services/nearby_journeys.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import './widgets/journey_preview_widget.dart';
@@ -60,7 +62,10 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
   }
 
   bool get _canProceedStep0 => _selectedType != null;
-  bool get _canProceedStep1 => _name.length >= 3 && _mission.length >= 5;
+  bool get _canProceedStep1 =>
+      _name.trim().length >= 3 &&
+      _mission.trim().length >= 5 &&
+      (_goalType == GoalType.none || (_goalTarget ?? 0) > 0);
 
   void _handleContinue() {
     if (_currentStep == 0 && _canProceedStep0) {
@@ -73,22 +78,45 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
   }
 
   Future<void> _submitJourney() async {
-    if (_selectedType == null) return;
+    if (_selectedType == null || _isSubmitting) return;
     setState(() => _isSubmitting = true);
 
-    // Simulate local save
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-
-    // Navigate to the journey detail of the new journey
-    // In production: save to local storage and get real ID
-    context.pop();
-    context.push(AppRoutes.journeyDetailScreen, extra: 'journey-001');
+    try {
+      final area = cityArea(_originCity, _originCountry);
+      final journey = await JourneyRepository.instance.create(
+        type: _selectedType!,
+        name: _name,
+        mission: _mission,
+        openingNote: _openingNote,
+        goalType: _goalType,
+        goalTarget: _goalTarget,
+        visibility: _originVisibility,
+        city: _originCity,
+        country: _originCountry,
+        lat: area?.latitude,
+        lng: area?.longitude,
+      );
+      if (!mounted) return;
+      context.pushReplacement(
+        '${AppRoutes.journeyDetailScreen}?id=${Uri.encodeComponent(journey.id)}',
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Couldn’t save your journey. Your draft is still here—please try again.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   void _handleBack() {
+    if (_isSubmitting) return;
     if (_currentStep > 0) {
       _goToStep(_currentStep - 1);
     } else {
@@ -204,7 +232,9 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: _canProceed ? _handleContinue : null,
+                onPressed: _canProceed && !_isSubmitting
+                    ? _handleContinue
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
