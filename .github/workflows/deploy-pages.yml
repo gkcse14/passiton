@@ -50,7 +50,10 @@ jobs:
           REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: flutter build web --release --no-pub --base-href "/${REPOSITORY_NAME}/"
 
-      - name: Upload Pages artifact
+      - name: Version loader and app URLs for this release
+        run: dart tool/stamp_web_release.dart "$GITHUB_SHA"
+
+      - name: Upload versioned Pages artifact
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v4
         with:
