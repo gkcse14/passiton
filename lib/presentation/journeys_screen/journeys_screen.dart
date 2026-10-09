@@ -49,6 +49,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
   Future<void> _chooseArea() async {
     final area = await showModalBottomSheet<DiscoveryArea>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: JourneyColors(context).surface,
@@ -98,6 +99,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
   void _howItWorks() {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       useSafeArea: true,
       isScrollControlled: true,
