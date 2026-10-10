@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/page_layout.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/data/sample_data.dart';
@@ -112,7 +113,9 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
     );
   }
 
-  void _openGiftCatalogue() {
+  Future<void> _openGiftCatalogue() async {
+    final name = await _journeyRepo.displayName();
+    if (!mounted) return;
     final isActive = _journey.state == JourneyState.active;
     if (!isActive) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,7 +144,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
       builder: (_) => GiftCatalogueSheet(
         journey: _journey,
         participantId: kLocalUserId,
-        participantName: kLocalUserName,
+        participantName: name,
         participantStopId: myStop.id,
         hasJoined: _hasJoined,
       ),
@@ -152,7 +155,9 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
     });
   }
 
-  void _openGiftsScreen() {
+  Future<void> _openGiftsScreen() async {
+    final name = await _journeyRepo.displayName();
+    if (!mounted) return;
     final myStops = _stops
         .where((s) => s.participantId == kLocalUserId)
         .toList();
@@ -162,7 +167,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
             builder: (_) => GiftsAndSupportScreen(
               journey: _journey,
               participantId: kLocalUserId,
-              participantName: kLocalUserName,
+              participantName: name,
               participantStopId: myStops.isNotEmpty ? myStops.first.id : null,
               hasJoined: _hasJoined,
             ),
@@ -213,57 +218,62 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
     final stats = computeStats(_journey.id, _stops);
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          _buildSliverAppBar(theme, isDark, innerBoxIsScrolled),
-          SliverToBoxAdapter(child: _buildHeroInfo(theme, isDark)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: JourneyStatsWidget(stats: stats, journey: _journey),
-            ),
-          ),
-          // Gifts & Support section
-          SliverToBoxAdapter(child: _buildGiftsSection(theme, isDark)),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _TabBarDelegate(
-              TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Journey'),
-                  Tab(text: 'Map'),
-                ],
-                labelColor: AppTheme.primary,
-                unselectedLabelColor: AppTheme.textSecondaryLight,
-                indicatorColor: AppTheme.primary,
-                indicatorWeight: 2,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                ),
+    return PageFrame(
+      maxWidth: 840,
+      child: Scaffold(
+        backgroundColor: isDark
+            ? AppTheme.backgroundDark
+            : AppTheme.backgroundLight,
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            _buildSliverAppBar(theme, isDark, innerBoxIsScrolled),
+            SliverToBoxAdapter(child: _buildHeroInfo(theme, isDark)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: JourneyStatsWidget(stats: stats, journey: _journey),
               ),
-              isDark: isDark,
             ),
-          ),
-        ],
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            JourneyTimelineWidget(stops: _stops),
-            JourneyMapWidget(stops: _stops, journeyId: _journey.id),
+            // Gifts & Support section
+            SliverToBoxAdapter(child: _buildGiftsSection(theme, isDark)),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabBarDelegate(
+                TabBar(
+                  controller: _tabController,
+                  tabs: const [
+                    Tab(text: 'Timeline'),
+                    Tab(text: 'Map'),
+                  ],
+                  labelColor: Theme.of(context).colorScheme.primary,
+                  unselectedLabelColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
+                  indicatorColor: Theme.of(context).colorScheme.primary,
+                  indicatorWeight: 2,
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                  ),
+                ),
+                isDark: isDark,
+              ),
+            ),
           ],
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              JourneyTimelineWidget(stops: _stops),
+              JourneyMapWidget(stops: _stops, journeyId: _journey.id),
+            ],
+          ),
         ),
+        bottomNavigationBar: _buildBottomActions(isDark, bottomPadding),
       ),
-      bottomNavigationBar: _buildBottomActions(isDark, bottomPadding),
     );
   }
 
@@ -288,10 +298,10 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.card_giftcard_rounded,
-                  size: 16,
-                  color: AppTheme.primary,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 6),
                 Text('Gifts & support', style: theme.textTheme.titleSmall),
@@ -357,13 +367,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
               )
             else if (!_hasJoined)
               GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Join this journey to add a gift.'),
-                    ),
-                  );
-                },
+                onTap: _joinJourney,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -445,6 +449,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
+        tooltip: 'Back to journeys',
         icon: Container(
           width: 36,
           height: 36,
@@ -474,6 +479,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
       ),
       actions: [
         IconButton(
+          tooltip: 'Share journey',
           icon: Container(
             width: 36,
             height: 36,
@@ -544,7 +550,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
                     color: AppTheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Preview',
                     style: TextStyle(
                       fontSize: 11,
@@ -565,44 +571,19 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
             ),
           ),
           const SizedBox(height: 8),
-          Row(
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
             children: [
-              Icon(
-                Icons.person_rounded,
-                size: 13,
-                color: isDark
-                    ? AppTheme.textSecondaryDark
-                    : AppTheme.textSecondaryLight,
-              ),
-              const SizedBox(width: 4),
               Text(
                 _journey.creatorId == kLocalUserId
-                    ? 'Started by You'
+                    ? 'Started by you'
                     : 'Started by ${_journey.creatorName}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark
-                      ? AppTheme.textSecondaryDark
-                      : AppTheme.textSecondaryLight,
-                ),
+                style: theme.textTheme.bodySmall,
               ),
-              const SizedBox(width: 12),
-              Icon(
-                Icons.calendar_today_rounded,
-                size: 13,
-                color: isDark
-                    ? AppTheme.textSecondaryDark
-                    : AppTheme.textSecondaryLight,
-              ),
-              const SizedBox(width: 4),
               Text(
                 _formatDate(_journey.createdAt),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark
-                      ? AppTheme.textSecondaryDark
-                      : AppTheme.textSecondaryLight,
-                ),
+                style: theme.textTheme.bodySmall,
               ),
             ],
           ),
@@ -625,40 +606,19 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: _savingFollow ? null : _toggleFollow,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: _isFollowing
-                    ? AppTheme.primaryContainer
-                    : (isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: _isFollowing
-                      ? AppTheme.primary
-                      : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
-                ),
-              ),
-              child: Icon(
-                _isFollowing
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                size: 20,
-                color: _isFollowing
-                    ? AppTheme.primary
-                    : (isDark
-                          ? AppTheme.textSecondaryDark
-                          : AppTheme.textSecondaryLight),
-              ),
+          IconButton.filledTonal(
+            tooltip: _isFollowing ? 'Unsave journey' : 'Save journey',
+            onPressed: _savingFollow ? null : _toggleFollow,
+            icon: Icon(
+              _isFollowing
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: SizedBox(
-              height: 48,
+              height: null,
               child: ElevatedButton(
                 onPressed: _journey.state == JourneyState.archived
                     ? null

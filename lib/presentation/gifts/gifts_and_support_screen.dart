@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/page_layout.dart';
 
 import '../../core/models/gift_models.dart';
 import '../../core/models/journey_models.dart';
@@ -243,158 +244,166 @@ class _GiftsAndSupportScreenState extends State<GiftsAndSupportScreen>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final isActive = widget.journey.state == JourneyState.active;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      appBar: AppBar(
+    return PageFrame(
+      maxWidth: 840,
+      child: Scaffold(
         backgroundColor: isDark
             ? AppTheme.backgroundDark
             : AppTheme.backgroundLight,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Gifts & support'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(
-            height: 1,
-            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+        appBar: AppBar(
+          backgroundColor: isDark
+              ? AppTheme.backgroundDark
+              : AppTheme.backgroundLight,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text('Gifts & support'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Divider(
+              height: 1,
+              color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+            ),
           ),
         ),
-      ),
-      body: Column(
-        children: [
-          // Object header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: widget.journey.type.accentColor.withAlpha(40),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: ObjectArtworkWidget(
-                      type: widget.journey.type,
-                      size: 32,
+        body: Column(
+          children: [
+            // Object header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: widget.journey.type.accentColor.withAlpha(40),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: ObjectArtworkWidget(
+                        type: widget.journey.type,
+                        size: 32,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.journey.name,
-                        style: theme.textTheme.titleLarge,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        '$totalGifts gift${totalGifts == 1 ? '' : 's'} · ${_supporters.length} supporter${_supporters.length == 1 ? '' : 's'}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDark
-                              ? AppTheme.textSecondaryDark
-                              : AppTheme.textSecondaryLight,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.journey.name,
+                          style: theme.textTheme.titleLarge,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                        Text(
+                          '$totalGifts gift${totalGifts == 1 ? '' : 's'} · ${_supporters.length} supporter${_supporters.length == 1 ? '' : 's'}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: isDark
+                                ? AppTheme.textSecondaryDark
+                                : AppTheme.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Tab bar
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            decoration: BoxDecoration(
-              color: isDark ? AppTheme.surfaceDark : AppTheme.backgroundLight,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                ],
               ),
             ),
-            child: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'Collection'),
-                Tab(text: 'Supporters'),
-              ],
-              labelColor: Colors.white,
-              unselectedLabelColor: isDark
-                  ? AppTheme.textSecondaryDark
-                  : AppTheme.textSecondaryLight,
-              indicator: BoxDecoration(
-                color: AppTheme.primary,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Tab content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildCollection(theme, isDark),
-                _buildSupporters(theme, isDark),
-              ],
-            ),
-          ),
-          // Bottom add gift
-          if (isActive)
+            const SizedBox(height: 12),
+            // Tab bar
             Container(
-              padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding + 12),
+              margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppTheme.backgroundDark
-                    : AppTheme.backgroundLight,
-                border: Border(
-                  top: BorderSide(
-                    color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-                  ),
+                color: isDark ? AppTheme.surfaceDark : AppTheme.backgroundLight,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: _openCatalogue,
-                  icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-                  label: const Text(
-                    'Add a gift',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              child: TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(text: 'Collection'),
+                  Tab(text: 'Supporters'),
+                ],
+                labelColor: Colors.white,
+                unselectedLabelColor: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
+                indicator: BoxDecoration(
+                  color: AppTheme.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Tab content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildCollection(theme, isDark),
+                  _buildSupporters(theme, isDark),
+                ],
+              ),
+            ),
+            // Bottom add gift
+            if (isActive)
+              Container(
+                padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding + 12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppTheme.backgroundDark
+                      : AppTheme.backgroundLight,
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark
+                          ? AppTheme.borderDark
+                          : AppTheme.borderLight,
+                    ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: _openCatalogue,
+                    icon: const Icon(Icons.card_giftcard_rounded, size: 18),
+                    label: const Text(
+                      'Add a gift',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

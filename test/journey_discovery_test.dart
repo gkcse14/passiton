@@ -189,4 +189,29 @@ void main() {
       await expectLater(archived.join(created.id), throwsStateError);
     },
   );
+  test(
+    'new chapters use the profile name and reset removes local activity',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('display_name', 'Avery');
+      final repo = JourneyRepository();
+      await repo.init();
+      final created = await repo.create(
+        type: ObjectType.heart,
+        name: 'Fresh Start',
+        mission: 'Leave a kind word',
+      );
+      await repo.follow(created.id, true);
+      expect(created.creatorName, 'Avery');
+      expect(repo.stops.last.displayName, 'Avery');
+      await repo.join('journey-006', message: 'Hello');
+      expect(repo.stops.last.displayName, 'Avery');
+      await repo.reset();
+      expect(repo.find(created.id), isNull);
+      final restored = JourneyRepository();
+      await restored.init();
+      expect(restored.find(created.id), isNull);
+      expect(restored.journeys.every((j) => j.isSampleData), isTrue);
+    },
+  );
 }

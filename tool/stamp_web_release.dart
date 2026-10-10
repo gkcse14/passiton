@@ -29,8 +29,9 @@ import 'dart:io';
 }
 
 void main(List<String> arguments) {
-  if (arguments.length != 1)
+  if (arguments.length != 1) {
     throw ArgumentError('Usage: dart tool/stamp_web_release.dart <git-sha>');
+  }
   final index = File('build/web/index.html');
   final bootstrap = File('build/web/flutter_bootstrap.js');
   final result = stampRelease(

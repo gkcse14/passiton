@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/gift_models.dart';
@@ -19,7 +20,7 @@ enum GiftAddResult {
   saveFailed,
 }
 
-class GiftRepository {
+class GiftRepository extends ChangeNotifier {
   static final GiftRepository _instance = GiftRepository._();
   factory GiftRepository() => _instance;
   GiftRepository._();
@@ -59,6 +60,15 @@ class GiftRepository {
       await prefs.setBool(_kSeedDoneKey, true);
     }
     _loaded = true;
+  }
+
+  Future<void> reset() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kContributionsKey);
+    await prefs.remove(_kSeedDoneKey);
+    _loaded = false;
+    await init();
+    notifyListeners();
   }
 
   // ── Read ───────────────────────────────────────────────────────────────────
@@ -283,6 +293,7 @@ class GiftRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await _persist(prefs);
+      notifyListeners();
       return GiftAddResult.success;
     } catch (_) {
       _contributions.remove(contribution);
@@ -328,6 +339,7 @@ class GiftRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await _persist(prefs);
+      notifyListeners();
       return GiftAddResult.success;
     } catch (_) {
       _contributions.remove(contribution);
@@ -363,6 +375,7 @@ class GiftRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await _persist(prefs);
+      notifyListeners();
       return GiftAddResult.success;
     } catch (_) {
       _contributions.remove(contribution);
@@ -374,7 +387,9 @@ class GiftRepository {
 
   Future<void> _persist(SharedPreferences prefs) async {
     final raw = _contributions.map((c) => jsonEncode(c.toMap())).toList();
-    await prefs.setStringList(_kContributionsKey, raw);
+    if (!await prefs.setStringList(_kContributionsKey, raw)) {
+      throw StateError('Could not save gifts.');
+    }
   }
 
   String _generateId() =>

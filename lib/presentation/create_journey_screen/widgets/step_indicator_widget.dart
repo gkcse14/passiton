@@ -21,7 +21,7 @@ class StepIndicatorWidget extends StatelessWidget {
         Text(
           'Step ${currentStep + 1} of $totalSteps · ${const ['Choose', 'Your story', 'Ready to go'][currentStep.clamp(0, 2)]}',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             color: isDark
                 ? AppTheme.textSecondaryDark
@@ -37,7 +37,9 @@ class StepIndicatorWidget extends StatelessWidget {
             return Row(
               children: [
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
                   width: isCurrent ? 28 : 8,
                   height: 8,

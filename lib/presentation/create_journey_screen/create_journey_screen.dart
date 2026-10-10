@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../widgets/page_layout.dart';
 
 import '../../core/models/journey_models.dart';
 import '../../core/repositories/journey_repository.dart';
@@ -20,7 +22,6 @@ class CreateJourneyScreen extends StatefulWidget {
 
 class _CreateJourneyScreenState extends State<CreateJourneyScreen>
     with SingleTickerProviderStateMixin {
-  // TODO: Replace with Riverpod for production
   int _currentStep = 0;
   ObjectType? _selectedType;
   String _name = '';
@@ -28,10 +29,12 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
   String _openingNote = '';
   GoalType _goalType = GoalType.none;
   int? _goalTarget;
-  LocationVisibility _originVisibility = LocationVisibility.city;
+  LocationVisibility _originVisibility = LocationVisibility.hidden;
   String? _originCity;
   String? _originCountry;
   bool _isSubmitting = false;
+  bool _allowPop = false;
+  bool _confirmingDiscard = false;
 
   late AnimationController _stepAnimController;
   late Animation<double> _stepFadeAnim;
@@ -39,6 +42,7 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
   @override
   void initState() {
     super.initState();
+    _loadLocationPreference();
     _stepAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -46,6 +50,18 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
     _stepFadeAnim = CurvedAnimation(
       parent: _stepAnimController,
       curve: Curves.easeOutCubic,
+    );
+  }
+
+  Future<void> _loadLocationPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted || _currentStep != 0) return;
+    final value = prefs.getString('default_location');
+    setState(
+      () => _originVisibility = LocationVisibility.values.firstWhere(
+        (v) => v.name == value,
+        orElse: () => LocationVisibility.hidden,
+      ),
     );
   }
 
@@ -57,15 +73,23 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
 
   void _goToStep(int step) {
     setState(() => _currentStep = step);
-    _stepAnimController.reset();
-    _stepAnimController.forward();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _stepAnimController.value = 1;
+    } else {
+      _stepAnimController.reset();
+      _stepAnimController.forward();
+    }
   }
 
   bool get _canProceedStep0 => _selectedType != null;
   bool get _canProceedStep1 =>
       _name.trim().length >= 3 &&
       _mission.trim().length >= 5 &&
-      (_goalType == GoalType.none || (_goalTarget ?? 0) > 0);
+      (_goalType == GoalType.none || (_goalTarget ?? 0) > 0) &&
+      (_originVisibility == LocationVisibility.hidden ||
+          (_originCountry?.trim().isNotEmpty ?? false)) &&
+      (_originVisibility != LocationVisibility.city ||
+          (_originCity?.trim().isNotEmpty ?? false));
 
   void _handleContinue() {
     if (_currentStep == 0 && _canProceedStep0) {
@@ -124,13 +148,26 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
     }
   }
 
+  Future<void> _leave() async {
+    setState(() => _allowPop = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.journeysScreen);
+    }
+  }
+
   Future<void> _confirmDiscard() async {
+    if (_confirmingDiscard) return;
     final hasData =
         _name.isNotEmpty || _mission.isNotEmpty || _selectedType != null;
     if (!hasData) {
-      context.pop();
+      await _leave();
       return;
     }
+    _confirmingDiscard = true;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -151,119 +188,112 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
         ],
       ),
     );
-    if (confirm == true && mounted) context.pop();
+    _confirmingDiscard = false;
+    if (confirm == true && mounted) await _leave();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final topPadding = MediaQuery.of(context).padding.top;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      body: Column(
-        children: [
-          // Custom header
-          Container(
-            padding: EdgeInsets.fromLTRB(20, topPadding + 12, 20, 12),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _handleBack,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppTheme.surfaceDark
-                          : AppTheme.surfaceLight,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: isDark
-                            ? AppTheme.borderDark
-                            : AppTheme.borderLight,
+    return PopScope(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _handleBack();
+      },
+      child: Scaffold(
+        backgroundColor: isDark
+            ? AppTheme.backgroundDark
+            : AppTheme.backgroundLight,
+        body: PageFrame(
+          maxWidth: 720,
+          child: Column(
+            children: [
+              // Custom header
+              Container(
+                padding: EdgeInsets.fromLTRB(20, topPadding + 12, 20, 12),
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Back',
+                      onPressed: _isSubmitting ? null : _handleBack,
+                      icon: const Icon(Icons.arrow_back_rounded),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: StepIndicatorWidget(
+                        currentStep: _currentStep,
+                        totalSteps: 3,
                       ),
                     ),
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      size: 16,
+                    const SizedBox(width: 36),
+                  ],
+                ),
+              ),
+              // Step content
+              Expanded(
+                child: FadeTransition(
+                  opacity: _stepFadeAnim,
+                  child: _buildStepContent(),
+                ),
+              ),
+              // Bottom actions
+              Container(
+                padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding + 12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppTheme.backgroundDark
+                      : AppTheme.backgroundLight,
+                  border: Border(
+                    top: BorderSide(
                       color: isDark
-                          ? AppTheme.textPrimaryDark
-                          : AppTheme.textPrimaryLight,
+                          ? AppTheme.borderDark
+                          : AppTheme.borderLight,
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: StepIndicatorWidget(
-                    currentStep: _currentStep,
-                    totalSteps: 3,
-                  ),
-                ),
-                const SizedBox(width: 36),
-              ],
-            ),
-          ),
-          // Step content
-          Expanded(
-            child: FadeTransition(
-              opacity: _stepFadeAnim,
-              child: _buildStepContent(),
-            ),
-          ),
-          // Bottom actions
-          Container(
-            padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding + 12),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppTheme.backgroundDark
-                  : AppTheme.backgroundLight,
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-                ),
-              ),
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _canProceed && !_isSubmitting
-                    ? _handleContinue
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: AppTheme.borderLight,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(26),
-                  ),
-                ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        _currentStep == 2 ? 'Start its journey' : 'Continue',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _canProceed && !_isSubmitting
+                        ? _handleContinue
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: AppTheme.borderLight,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
                       ),
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            _currentStep == 2
+                                ? 'Start its journey'
+                                : 'Continue',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
