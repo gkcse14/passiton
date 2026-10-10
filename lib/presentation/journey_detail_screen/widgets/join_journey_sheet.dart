@@ -122,6 +122,7 @@ class _JoinJourneySheetState extends State<JoinJourneySheet> {
                 child: FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: JourneyColors.green,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.all(17),
                   ),
                   onPressed: _saving

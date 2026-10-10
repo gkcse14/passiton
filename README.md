@@ -1,4 +1,4 @@
-# Flutter
+# Pass It On
 
 ## GitHub Pages deployment
 
@@ -158,6 +158,39 @@ coordinates remain available in Everywhere. New joined chapters hide location.
 Every pull request runs the interaction/repository tests and builds Flutter web.
 Merging to `main` automatically publishes the release to
 [GitHub Pages](https://gkcse14.github.io/passiton/).
+
+## App experience
+
+The app uses a shared Material 3 design in light and dark mode. Mobile has a fixed
+three-tab navigation bar; desktop has a sidebar and comfortable content widths.
+System text size is respected, and reduced motion applies to artwork and routes.
+
+- **Journeys:** discover nearby objects, choose a city, and revisit started,
+  joined, or saved journeys.
+- **Explore:** search names and missions, filter by object or saved state, and
+  sort by newest, name, or support. Creations and saves use the same repository
+  as journey details and profile activity.
+- **Create:** choose an object, add a name and mission, then review. Opening notes
+  and goals are optional. Location defaults to hidden, or the preference in You.
+- **You:** edit the name used for new chapters and gifts, view live activity,
+  choose appearance and accessibility preferences, and reset local data.
+- **Journey details:** read the timeline and map, save a journey, join with a note,
+  give a preview gift, and copy an invitation. Local-only invitations explain
+  that another device cannot retrieve the local journey.
+
+Resetting restores sample journeys and gifts in memory and storage, removes local
+preferences, and returns to the introduction. The app remains a device-local
+preview; cloud accounts, cross-device sync, notifications, and real payments are
+not implemented.
+
+Tests cover persistence, profile preferences, search/save interactions, creation,
+joining, reset, and compact/desktop/dark/large-text layouts. To export widget
+renders while running the tests:
+
+```bash
+PASSITON_TEST_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf \
+  flutter test --no-pub --dart-define=PASSITON_PREVIEW_DIR=/tmp/passiton-previews
+```
 
 ## 🙏 Acknowledgments
 - Built with [Rocket.new](https://rocket.new)

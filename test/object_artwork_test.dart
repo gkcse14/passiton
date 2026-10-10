@@ -6,6 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:passiton/core/repositories/journey_repository.dart';
+import 'package:passiton/presentation/journey_detail_screen/widgets/pass_it_on_sheet_widget.dart';
+import 'package:passiton/presentation/gifts/gift_catalogue_sheet.dart';
+import 'package:passiton/core/data/sample_data.dart';
+import 'package:passiton/core/motion_notifier.dart';
 import 'package:passiton/core/services/nearby_journeys.dart';
 import 'package:passiton/presentation/create_journey_screen/create_journey_screen.dart';
 import 'package:passiton/routes/app_routes.dart';
@@ -63,12 +67,19 @@ Future<void> _render(
   String name, {
   Size size = const Size(390, 844),
   bool dark = false,
+  double textScale = 1,
 }) async {
   tester.view.physicalSize = size * 2;
   tester.view.devicePixelRatio = 2;
   await tester.pumpWidget(
     MaterialApp(
       theme: _theme(dark),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       home: RepaintBoundary(key: _boundary, child: screen),
     ),
   );
@@ -252,6 +263,200 @@ void main() {
       'onboarding-compact',
       size: const Size(320, 640),
     );
+  });
+
+  testWidgets('new screens adapt to compact, desktop, dark, and large text', (
+    tester,
+  ) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _render(
+      tester,
+      const ExploreScreen(),
+      'explore-desktop',
+      size: const Size(1280, 900),
+    );
+    await _render(
+      tester,
+      const ExploreScreen(),
+      'explore-compact-dark',
+      size: const Size(320, 640),
+      dark: true,
+      textScale: 1.4,
+    );
+    await _render(
+      tester,
+      const YouScreen(),
+      'profile-large-text',
+      size: const Size(320, 700),
+      textScale: 1.5,
+    );
+    await _render(
+      tester,
+      const JourneysScreen(),
+      'journeys-large-text',
+      size: const Size(320, 700),
+      textScale: 1.5,
+    );
+    await _render(
+      tester,
+      const OnboardingScreen(),
+      'onboarding-dark',
+      dark: true,
+      textScale: 1.5,
+    );
+    await _render(
+      tester,
+      const CreateJourneyScreen(),
+      'create-desktop',
+      size: const Size(1280, 900),
+    );
+    await _render(
+      tester,
+      const JourneyDetailScreen(journeyId: 'journey-001'),
+      'detail-large-text',
+      size: const Size(320, 700),
+      textScale: 1.5,
+    );
+    final journey = JourneyRepository.instance.find('journey-001')!;
+    await _render(
+      tester,
+      Scaffold(
+        body: PassItOnSheetWidget(journey: journey, stops: const []),
+      ),
+      'share-large-text',
+      size: const Size(320, 600),
+      textScale: 1.5,
+    );
+    await _render(
+      tester,
+      Scaffold(
+        body: GiftCatalogueSheet(
+          journey: journey,
+          participantId: kLocalUserId,
+          participantName: 'Traveller',
+          participantStopId: null,
+          hasJoined: true,
+        ),
+      ),
+      'gifts-compact',
+      size: const Size(320, 640),
+    );
+  });
+
+  testWidgets(
+    'responsive navigation and draft discard work through real routes',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({'onboarding_seen': true});
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      appRouter.go(AppRoutes.journeysScreen);
+      await tester.pumpWidget(
+        MaterialApp.router(
+          theme: _theme(false),
+          routerConfig: appRouter,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.widgetWithText(ListTile, 'Explore'), findsOneWidget);
+      await tester.tap(find.widgetWithText(ListTile, 'Explore'));
+      await tester.pump();
+      expect(find.byType(ExploreScreen), findsOneWidget);
+      tester.view.physicalSize = const Size(390, 844);
+      await tester.pump();
+      expect(find.byType(NavigationBar), findsOneWidget);
+      appRouter.push(AppRoutes.createJourneyScreen);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text('Potato'));
+      await tester.pump();
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      expect(find.text('Discard journey?'), findsOneWidget);
+      await tester.tap(find.text('Keep editing'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CreateJourneyScreen), findsOneWidget);
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CreateJourneyScreen), findsNothing);
+      expect(find.byType(ExploreScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('Explore searches local creations and persists saved items', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final repo = JourneyRepository(seed: false);
+    await repo.init();
+    final journey = await repo.create(
+      type: ObjectType.heart,
+      name: 'Kindness Express',
+      mission: 'Send a kind word',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: _theme(false),
+        home: ExploreScreen(repository: repo),
+      ),
+    );
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'Kindness Express');
+    await tester.pump();
+    final save = find.byTooltip('Save Kindness Express');
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(repo.find(journey.id)!.isFollowed, isTrue);
+    final restored = JourneyRepository(seed: false);
+    await restored.init();
+    expect(restored.find(journey.id)!.isFollowed, isTrue);
+    await tester.enterText(find.byType(TextField), 'no matching story');
+    await tester.pump();
+    await tester.ensureVisible(find.text('No journeys found'));
+    expect(find.text('No journeys found'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    repo.dispose();
+    restored.dispose();
+  });
+
+  testWidgets('profile preferences are actionable and saved', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      MaterialApp(theme: _theme(false), home: const YouScreen()),
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('Edit display name'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Avery');
+    await tester.tap(find.text('Save name'));
+    await tester.pumpAndSettle();
+    expect(find.text('Avery'), findsOneWidget);
+    final motion = find.widgetWithText(SwitchListTile, 'Reduce motion');
+    await tester.ensureVisible(motion);
+    await tester.pumpAndSettle();
+    await tester.tap(motion);
+    await tester.pumpAndSettle();
+    expect(reduceMotionNotifier.value, isTrue);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('display_name'), 'Avery');
+    expect(prefs.getBool('reduce_motion'), isTrue);
+    reduceMotionNotifier.value = false;
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets(

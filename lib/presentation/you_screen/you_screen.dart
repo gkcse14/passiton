@@ -1,269 +1,229 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../core/data/sample_data.dart';
 import '../../core/data/gift_catalogue.dart';
 import '../../core/models/journey_models.dart';
-import '../../core/models/gift_models.dart';
+import '../../core/repositories/journey_repository.dart';
 import '../../core/repositories/gift_repository.dart';
-import '../../routes/app_routes.dart';
-import '../../theme/app_theme.dart';
-import '../gifts/widgets/gift_artwork_widget.dart';
-import './widgets/demo_controls_widget.dart';
-import './widgets/profile_header_widget.dart';
-import './widgets/profile_stats_widget.dart';
-import './widgets/settings_section_widget.dart';
-import '../../core/modal_notifier.dart';
 import '../../core/theme_notifier.dart';
 import '../../core/motion_notifier.dart';
+import '../../core/modal_notifier.dart';
+import '../../routes/app_routes.dart';
+import '../../widgets/page_layout.dart';
+import '../gifts/widgets/gift_artwork_widget.dart';
 
 class YouScreen extends StatefulWidget {
   const YouScreen({super.key});
-
   @override
   State<YouScreen> createState() => _YouScreenState();
 }
 
 class _YouScreenState extends State<YouScreen> {
-  String _displayName = 'Traveller';
-  String _themeMode = 'System';
+  final _repo = JourneyRepository.instance;
+  final _gifts = GiftRepository();
+  String _name = 'Traveller';
+  String _theme = 'System';
+  String _visibility = 'hidden';
+  bool _motion = false;
   bool _haptics = true;
-  bool _reduceMotion = false;
-  String _defaultLocation = 'city';
-  late List<JourneyObject> _journeys;
-  late List<JourneyStop> _stops;
-  final _giftRepo = GiftRepository();
-  List<GiftContribution> _giftsSent = [];
+  bool _resetting = false;
 
   @override
   void initState() {
     super.initState();
-    _journeys = sampleJourneyMaps.map(JourneyObject.fromMap).toList();
-    _stops = sampleStopMaps.map(JourneyStop.fromMap).toList();
-    _loadPrefs();
-    _loadGifts();
+    _load();
   }
 
-  Future<void> _loadPrefs() async {
+  Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
-      _displayName = prefs.getString('display_name') ?? 'Traveller';
-      _themeMode = prefs.getString('theme_mode') ?? 'System';
+      _name = prefs.getString('display_name') ?? 'Traveller';
+      _theme = prefs.getString('theme_mode') ?? 'System';
+      _visibility = prefs.getString('default_location') ?? 'hidden';
+      _motion = prefs.getBool('reduce_motion') ?? false;
       _haptics = prefs.getBool('haptics') ?? true;
-      _reduceMotion = prefs.getBool('reduce_motion') ?? false;
-      _defaultLocation = prefs.getString('default_location') ?? 'city';
     });
   }
 
-  void _loadGifts() {
-    setState(() {
-      _giftsSent = _giftRepo.getGiftsSentByUser(kLocalUserId);
-    });
-  }
-
-  Future<void> _savePrefs() async {
-    reduceMotionNotifier.value = _reduceMotion;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('display_name', _displayName);
-    await prefs.setString('theme_mode', _themeMode);
-    await prefs.setBool('haptics', _haptics);
-    await prefs.setBool('reduce_motion', _reduceMotion);
-    await prefs.setString('default_location', _defaultLocation);
-  }
-
-  int get _startedCount =>
-      _journeys.where((j) => j.creatorId == kLocalUserId).length;
-
-  int get _joinedCount => _stops
-      .where((s) => s.participantId == kLocalUserId && !s.isOrigin)
-      .map((s) => s.objectId)
-      .toSet()
-      .length;
-
-  int get _followingCount => _journeys.where((j) => j.isFollowed).length;
-
-  void _editDisplayName() {
-    final controller = TextEditingController(text: _displayName);
-    showManagedModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        final bottomPadding = MediaQuery.of(ctx).viewInsets.bottom;
-        return Container(
-          padding: EdgeInsets.fromLTRB(24, 20, 24, bottomPadding + 24),
-          decoration: BoxDecoration(
-            color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Edit name', style: Theme.of(ctx).textTheme.headlineSmall),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                maxLength: 30,
-                decoration: InputDecoration(
-                  hintText: 'Your display name',
-                  filled: true,
-                  fillColor: isDark
-                      ? AppTheme.backgroundDark
-                      : AppTheme.backgroundLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(
-                      () => _displayName = controller.text.trim().isNotEmpty
-                          ? controller.text.trim()
-                          : _displayName,
-                    );
-                    _savePrefs();
-                    Navigator.pop(ctx);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                  child: const Text('Save'),
-                ),
-              ),
-            ],
+  Future<void> _save(String key, Object value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = value is bool
+          ? await prefs.setBool(key, value)
+          : await prefs.setString(key, value as String);
+      if (!saved) throw StateError('Save failed');
+      if (key == 'theme_mode') await initThemeMode();
+      if (key == 'reduce_motion') reduceMotionNotifier.value = value as bool;
+      if (key == 'haptics') hapticsNotifier.value = value as bool;
+      await _load();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Couldn’t save your preference. Please try again.'),
           ),
         );
-      },
-    );
+      }
+    }
   }
 
-  Future<void> _confirmReset() async {
-    final confirm = await showManagedDialog<bool>(
+  Future<void> _editName() async {
+    final controller = TextEditingController(text: _name);
+    final result = await showManagedDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Reset app data?'),
-        content: const Text(
-          'This will delete all your local journeys, stops, follows, and profile changes, '
-          'and restore the original sample content. This cannot be undone.',
+      builder: (context) => AlertDialog(
+        title: const Text('Your display name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 30,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Name',
+            helperText: 'Used for new journeys and chapters.',
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Reset', style: TextStyle(color: AppTheme.error)),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                Navigator.pop(context, controller.text.trim());
+              }
+            },
+            child: const Text('Save name'),
           ),
         ],
       ),
     );
-    if (confirm == true && mounted) {
+    if (result != null) await _save('display_name', result);
+    // The dialog's route transition can still reference its controller.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    controller.dispose();
+  }
+
+  void _info(String title, String body) => showManagedDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: SingleChildScrollView(child: Text(body)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Got it'),
+        ),
+      ],
+    ),
+  );
+
+  Future<void> _reset() async {
+    final confirmed = await showManagedDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset this device?'),
+        content: const Text(
+          'Your created journeys, chapters, saved items, gifts, and preferences will be removed. The original preview journeys will return. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep my data'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Reset app data'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _resetting = true);
+    try {
+      await _repo.reset();
+      await _gifts.reset();
       final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-      setState(() {
-        _displayName = 'Traveller';
-        _themeMode = 'System';
-        _haptics = true;
-        _reduceMotion = false;
-        _giftsSent = [];
-      });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('App data reset to defaults')),
-      );
+      for (final key in [
+        'display_name',
+        'theme_mode',
+        'reduce_motion',
+        'haptics',
+        'default_location',
+        'journey_discovery_city_v1',
+        'onboarding_seen',
+      ]) {
+        await prefs.remove(key);
+      }
+      await initThemeMode();
+      await initMotionPreference();
+      await _load();
+      if (mounted) context.go(AppRoutes.onboardingScreen);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reset could not finish. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _resetting = false);
     }
   }
 
-  void _showHowJourneysWork() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  void _activity(String title, List<JourneyObject> journeys) {
     showManagedModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        height: MediaQuery.of(context).size.height * 0.6,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (context) => SizedBox(
+        height: MediaQuery.sizeOf(context).height * .65,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              'How journeys work',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 20),
-            ..._howSteps.map(
-              (step) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${_howSteps.indexOf(step) + 1}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        step,
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.5,
-                          color: isDark
-                              ? AppTheme.textPrimaryDark
-                              : AppTheme.textPrimaryLight,
-                        ),
-                      ),
-                    ),
-                  ],
+            if (journeys.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Nothing here yet. Explore a journey or start your own.',
+                ),
+              ),
+            Expanded(
+              child: ListView.separated(
+                itemCount: journeys.length,
+                separatorBuilder: (_, _) => const Divider(),
+                itemBuilder: (context, i) => ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
+                  title: Text(journeys[i].name),
+                  subtitle: Text(
+                    journeys[i].mission,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_rounded),
+                  onTap: () {
+                    Navigator.pop(context);
+                    this.context.push(
+                      '${AppRoutes.journeyDetailScreen}?id=${Uri.encodeComponent(journeys[i].id)}',
+                    );
+                  },
                 ),
               ),
             ),
@@ -273,162 +233,64 @@ class _YouScreenState extends State<YouScreen> {
     );
   }
 
-  void _showGiftsSent(bool isDark) {
+  void _showGifts() {
+    final gifts = _gifts.getGiftsSentByUser(kLocalUserId);
     showManagedModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (context) => SizedBox(
+        height: MediaQuery.sizeOf(context).height * .65,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Row(
-                children: [
-                  Text(
-                    'Gifts you\'ve sent',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+              child: Text(
+                'Gifts you’ve sent',
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
-            const Divider(height: 16),
+            if (gifts.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Join a journey to leave a little gift for its adventure.',
+                ),
+              ),
             Expanded(
-              child: _giftsSent.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.card_giftcard_outlined,
-                            size: 48,
-                            color: isDark
-                                ? AppTheme.textSecondaryDark
-                                : AppTheme.textSecondaryLight,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No gifts sent yet.',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Open a journey and add a gift!',
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppTheme.textSecondaryDark
-                                  : AppTheme.textSecondaryLight,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: _giftsSent.length,
-                      itemBuilder: (context, i) {
-                        final c = _giftsSent[i];
-                        final item = catalogItemById(c.catalogueGiftId);
-                        final journey = _journeys.firstWhere(
-                          (j) => j.id == c.objectId,
-                          orElse: () => _journeys.first,
-                        );
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            children: [
-                              item != null
-                                  ? GiftArtworkWidget(item: item, size: 40)
-                                  : Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.borderLight,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item?.name ?? 'Unknown gift',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleSmall,
-                                    ),
-                                    Text(
-                                      'For ${journey.name}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: isDark
-                                                ? AppTheme.textSecondaryDark
-                                                : AppTheme.textSecondaryLight,
-                                          ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if (c.message != null)
-                                      Text(
-                                        '"${c.message}"',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              fontStyle: FontStyle.italic,
-                                              color: isDark
-                                                  ? AppTheme.textSecondaryDark
-                                                  : AppTheme.textSecondaryLight,
-                                            ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    _formatDate(c.createdAt),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(
-                                          color: isDark
-                                              ? AppTheme.textSecondaryDark
-                                              : AppTheme.textSecondaryLight,
-                                        ),
-                                  ),
-                                  if (c.source == GiftSource.demoPaid ||
-                                      c.source == GiftSource.seededDemo)
-                                    const Text(
-                                      'Demo',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: AppTheme.primary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+              child: ListView.builder(
+                itemCount: gifts.length,
+                itemBuilder: (context, i) {
+                  final gift = gifts[i];
+                  final item = catalogItemById(gift.catalogueGiftId);
+                  final journey = _repo.find(gift.objectId);
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 8,
                     ),
+                    leading: item == null
+                        ? const Icon(Icons.card_giftcard_outlined)
+                        : GiftArtworkWidget(item: item, size: 44),
+                    title: Text(item?.name ?? 'Gift'),
+                    subtitle: Text(
+                      journey?.name ?? 'Journey no longer available',
+                    ),
+                    trailing: journey == null
+                        ? null
+                        : const Icon(Icons.chevron_right_rounded),
+                    onTap: journey == null
+                        ? null
+                        : () {
+                            Navigator.pop(context);
+                            this.context.push(
+                              '${AppRoutes.journeyDetailScreen}?id=${Uri.encodeComponent(journey.id)}',
+                            );
+                          },
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -436,436 +298,280 @@ class _YouScreenState extends State<YouScreen> {
     );
   }
 
-  String _formatDate(DateTime dt) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[dt.month - 1]} ${dt.day}';
-  }
-
-  static const List<String> _howSteps = [
-    'Create an object — a potato, heart, star, or any traveller.',
-    'Pass it along to someone — they join and leave a message.',
-    'Each person adds a stop to the journey.',
-    'Group sharing creates branches — the object travels many paths at once.',
-    'Return to see its story grow across the world.',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final topPadding = MediaQuery.of(context).padding.top;
-
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.backgroundDark
-          : AppTheme.backgroundLight,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20, topPadding + 16, 20, 0),
-              child: _buildScreenHeader(theme, isDark),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: ProfileHeaderWidget(
-                displayName: _displayName,
-                isDark: isDark,
-                onEdit: _editDisplayName,
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: ProfileStatsWidget(
-                started: _startedCount,
-                joined: _joinedCount,
-                following: _followingCount,
-                isDark: isDark,
-              ),
-            ),
-          ),
-          // Gifts section
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: SettingsSectionWidget(
-                title: 'Gifts',
-                isDark: isDark,
-                items: [
-                  SettingsItem(
-                    icon: Icons.card_giftcard_rounded,
-                    label: 'Gifts you\'ve sent',
-                    subtitle: _giftsSent.isEmpty
-                        ? 'None yet'
-                        : '${_giftsSent.length} gift${_giftsSent.length == 1 ? '' : 's'}',
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: isDark
-                          ? AppTheme.textSecondaryDark
-                          : AppTheme.textSecondaryLight,
-                    ),
-                    onTap: () => _showGiftsSent(isDark),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Appearance section
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: SettingsSectionWidget(
-                title: 'Appearance',
-                isDark: isDark,
-                items: [
-                  SettingsItem(
-                    icon: Icons.palette_outlined,
-                    label: 'Theme',
-                    trailing: _ThemeSelector(
-                      selected: _themeMode,
-                      isDark: isDark,
-                      onChanged: (v) {
-                        setState(() => _themeMode = v);
-                        _savePrefs();
-                        saveThemeMode(v);
-                      },
-                    ),
-                  ),
-                  SettingsItem(
-                    icon: Icons.vibration_rounded,
-                    label: 'Haptics',
-                    trailing: Switch(
-                      value: _haptics,
-                      onChanged: (v) {
-                        setState(() => _haptics = v);
-                        _savePrefs();
-                      },
-                      activeThumbColor: AppTheme.primary,
-                    ),
-                  ),
-                  SettingsItem(
-                    icon: Icons.animation_rounded,
-                    label: 'Reduce motion',
-                    trailing: Switch(
-                      value: _reduceMotion,
-                      onChanged: (v) {
-                        setState(() => _reduceMotion = v);
-                        _savePrefs();
-                      },
-                      activeThumbColor: AppTheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Preferences section
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: SettingsSectionWidget(
-                title: 'Preferences',
-                isDark: isDark,
-                items: [
-                  SettingsItem(
-                    icon: Icons.location_on_rounded,
-                    label: 'Default location visibility',
-                    trailing: _LocationSelector(
-                      selected: _defaultLocation,
-                      isDark: isDark,
-                      onChanged: (v) {
-                        setState(() => _defaultLocation = v);
-                        _savePrefs();
-                      },
-                    ),
-                  ),
-                  SettingsItem(
-                    icon: Icons.notifications_outlined,
-                    label: 'Notifications',
-                    subtitle: 'Local preferences only',
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: isDark
-                          ? AppTheme.textSecondaryDark
-                          : AppTheme.textSecondaryLight,
-                    ),
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // About section
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: SettingsSectionWidget(
-                title: 'About',
-                isDark: isDark,
-                items: [
-                  SettingsItem(
-                    icon: Icons.help_outline_rounded,
-                    label: 'How journeys work',
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: isDark
-                          ? AppTheme.textSecondaryDark
-                          : AppTheme.textSecondaryLight,
-                    ),
-                    onTap: _showHowJourneysWork,
-                  ),
-                  SettingsItem(
-                    icon: Icons.info_outline_rounded,
-                    label: 'About Pass It On',
-                    subtitle: 'Version 1.0.0 (preview)',
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: isDark
-                          ? AppTheme.textSecondaryDark
-                          : AppTheme.textSecondaryLight,
-                    ),
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Demo controls section
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: DemoControlsWidget(
-                isDark: isDark,
-                onReplayOnboarding: () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('onboarding_seen', false);
-                  if (!context.mounted) return;
-                  context.go(AppRoutes.onboardingScreen);
-                },
-                onResetDemo: _confirmReset,
-              ),
-            ),
-          ),
-          // Danger zone
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: SettingsSectionWidget(
-                title: 'Danger zone',
-                isDark: isDark,
-                items: [
-                  SettingsItem(
-                    icon: Icons.delete_outline_rounded,
-                    label: 'Reset all app data',
-                    labelColor: AppTheme.error,
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: AppTheme.error.withAlpha(153),
-                    ),
-                    onTap: _confirmReset,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScreenHeader(ThemeData theme, bool isDark) {
-    return Text('You', style: theme.textTheme.headlineLarge);
-  }
-}
-
-class _ThemeSelector extends StatelessWidget {
-  final String selected;
-  final bool isDark;
-  final ValueChanged<String> onChanged;
-
-  const _ThemeSelector({
-    required this.selected,
-    required this.isDark,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _showPicker(context),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            selected,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark
-                  ? AppTheme.textSecondaryDark
-                  : AppTheme.textSecondaryLight,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Icon(
-            Icons.expand_more_rounded,
-            size: 16,
-            color: isDark
-                ? AppTheme.textSecondaryDark
-                : AppTheme.textSecondaryLight,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPicker(BuildContext context) {
-    showManagedModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+  Widget _section(String title, List<Widget> children) => Padding(
+    padding: const EdgeInsets.only(top: 28),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 12),
+        Card(
+          clipBehavior: Clip.antiAlias,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: ['System', 'Light', 'Dark'].map((opt) {
-              final isSelected = opt == selected;
-              return ListTile(
-                title: Text(opt),
-                trailing: isSelected
-                    ? const Icon(Icons.check_rounded, color: AppTheme.primary)
-                    : null,
-                onTap: () {
-                  onChanged(opt);
-                  Navigator.pop(context);
-                },
-              );
-            }).toList(),
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0) const Divider(indent: 20, endIndent: 20),
+                children[i],
+              ],
+            ],
           ),
-        );
-      },
-    );
-  }
-}
-
-class _LocationSelector extends StatelessWidget {
-  final String selected;
-  final bool isDark;
-  final ValueChanged<String> onChanged;
-
-  const _LocationSelector({
-    required this.selected,
-    required this.isDark,
-    required this.onChanged,
-  });
-
-  String get _label {
-    switch (selected) {
-      case 'city':
-        return 'City';
-      case 'countryOnly':
-        return 'Country only';
-      case 'hidden':
-        return 'Hidden';
-      default:
-        return 'City';
-    }
-  }
+        ),
+      ],
+    ),
+  );
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _showPicker(context),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _label,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark
-                  ? AppTheme.textSecondaryDark
-                  : AppTheme.textSecondaryLight,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Icon(
-            Icons.expand_more_rounded,
-            size: 16,
-            color: isDark
-                ? AppTheme.textSecondaryDark
-                : AppTheme.textSecondaryLight,
-          ),
-        ],
+  Widget build(BuildContext context) => Scaffold(
+    body: PageFrame(
+      maxWidth: 800,
+      child: SafeArea(
+        bottom: false,
+        child: ListenableBuilder(
+          listenable: Listenable.merge([_repo, _gifts]),
+          builder: (context, _) {
+            final started = _repo.journeys
+                .where((j) => j.creatorId == kLocalUserId)
+                .toList();
+            final joinedIds = _repo.stops
+                .where((s) => s.participantId == kLocalUserId && !s.isOrigin)
+                .map((s) => s.objectId)
+                .toSet();
+            final joined = _repo.journeys
+                .where((j) => joinedIds.contains(j.id))
+                .toList();
+            final saved = _repo.journeys.where((j) => j.isFollowed).toList();
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+              children: [
+                const PageHeading(
+                  title: 'You',
+                  subtitle: 'Your journeys, your little corner of the world.',
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primaryContainer,
+                          child: const Icon(
+                            Icons.person_outline_rounded,
+                            size: 30,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _name,
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Personal profile · this device',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Edit display name',
+                          onPressed: _editName,
+                          icon: const Icon(Icons.edit_outlined),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, box) => Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      for (final entry in [
+                        ('Started', started),
+                        ('Joined', joined),
+                        ('Saved', saved),
+                      ])
+                        SizedBox(
+                          width: (box.maxWidth - 24) / 3,
+                          child: Card(
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () =>
+                                  _activity('${entry.$1} journeys', entry.$2),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
+                                  horizontal: 4,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      '${entry.$2.length}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineMedium,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      entry.$1,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                _section('Your activity', [
+                  ListTile(
+                    leading: const Icon(Icons.card_giftcard_outlined),
+                    title: const Text('Gifts you’ve sent'),
+                    subtitle: Text(
+                      '${_gifts.getGiftsSentByUser(kLocalUserId).length} gifts along the way',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: _showGifts,
+                  ),
+                ]),
+                _section('Make it yours', [
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Appearance',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final mode in ['System', 'Light', 'Dark'])
+                              ChoiceChip(
+                                label: Text(mode),
+                                selected: _theme == mode,
+                                onSelected: (_) => _save('theme_mode', mode),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  SwitchListTile.adaptive(
+                    title: const Text('Reduce motion'),
+                    subtitle: const Text(
+                      'Use calmer transitions and still artwork.',
+                    ),
+                    value: _motion,
+                    onChanged: (v) => _save('reduce_motion', v),
+                  ),
+                  SwitchListTile.adaptive(
+                    title: const Text('Touch feedback'),
+                    subtitle: const Text(
+                      'Gentle haptics on supported devices.',
+                    ),
+                    value: _haptics,
+                    onChanged: (v) => _save('haptics', v),
+                  ),
+                ]),
+                _section('Privacy', [
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Location on new journeys',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Choose what your starting chapter shows. You can change it when creating a journey.',
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final option in [
+                              ('hidden', 'Hidden'),
+                              ('countryOnly', 'Country'),
+                              ('city', 'City'),
+                            ])
+                              ChoiceChip(
+                                label: Text(option.$2),
+                                selected: _visibility == option.$1,
+                                onSelected: (_) =>
+                                    _save('default_location', option.$1),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ]),
+                _section('Help & about', [
+                  ListTile(
+                    leading: const Icon(Icons.help_outline_rounded),
+                    title: const Text('How journeys work'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => _info(
+                      'How journeys work',
+                      '1. Find a journey or create one. Each object has a name and a mission.\n\n2. Join and leave a kind note. Your chapter becomes part of the timeline.\n\n3. Save favourites, leave a gift, or share an invitation to keep the story going.\n\nPreview journeys are examples. Your changes are stored on this device.',
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline_rounded),
+                    title: const Text('About Pass It On'),
+                    subtitle: const Text('Version 1.0 · local preview'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => _info(
+                      'Small things. Big stories.',
+                      'Pass It On connects little objects with acts of kindness.\n\nThis version is a local preview: journeys, gifts, and preferences are saved on this device. There is no shared account, cloud sync, payment processing, or notification delivery.\n\nClearing your browser or app storage removes your local data.',
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.replay_rounded),
+                    title: const Text('Replay the introduction'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.go(AppRoutes.onboardingScreen),
+                  ),
+                ]),
+                const SizedBox(height: 28),
+                const InfoNotice(
+                  'Your activity is saved on this device. Preview journeys help you try things out.',
+                  icon: Icons.devices_outlined,
+                ),
+                const SizedBox(height: 20),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  onPressed: _resetting ? null : _reset,
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: Text(_resetting ? 'Resetting…' : 'Reset app data'),
+                ),
+              ],
+            );
+          },
+        ),
       ),
-    );
-  }
-
-  void _showPicker(BuildContext context) {
-    showManagedModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children:
-                [
-                  {'value': 'city', 'label': 'City'},
-                  {'value': 'countryOnly', 'label': 'Country only'},
-                  {'value': 'hidden', 'label': 'Hidden'},
-                ].map((opt) {
-                  final isSelected = opt['value'] == selected;
-                  return ListTile(
-                    title: Text(opt['label']!),
-                    trailing: isSelected
-                        ? const Icon(
-                            Icons.check_rounded,
-                            color: AppTheme.primary,
-                          )
-                        : null,
-                    onTap: () {
-                      onChanged(opt['value']!);
-                      Navigator.pop(context);
-                    },
-                  );
-                }).toList(),
-          ),
-        );
-      },
-    );
-  }
+    ),
+  );
 }

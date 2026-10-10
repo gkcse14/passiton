@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/app_theme.dart';
 import '../../../core/data/sample_data.dart';
 import '../../../core/models/journey_models.dart';
 import '../../../core/services/nearby_journeys.dart';
@@ -10,7 +11,7 @@ class JourneyColors {
     : dark = Theme.of(context).brightness == Brightness.dark;
   Color get ink => dark ? const Color(0xFFF3F0E8) : const Color(0xFF263F36);
   Color get muted => dark ? const Color(0xFFB4BEB5) : const Color(0xFF657167);
-  Color get canvas => dark ? const Color(0xFF111B17) : const Color(0xFFFAF9F5);
+  Color get canvas => dark ? AppTheme.backgroundDark : AppTheme.backgroundLight;
   Color get surface => dark ? const Color(0xFF1D2A24) : Colors.white;
   Color get sage => dark ? const Color(0xFF293D32) : const Color(0xFFE9EFE4);
   Color get peach => dark ? const Color(0xFF3B3027) : const Color(0xFFF7EADD);
@@ -53,7 +54,7 @@ class JourneyWelcome extends StatelessWidget {
                             'A LITTLE WONDER, EVERY DAY',
                             style: TextStyle(
                               color: c.ink,
-                              fontSize: 9,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.4,
                             ),
@@ -165,7 +166,7 @@ class JourneyWelcome extends StatelessWidget {
                                     'made to be passed on',
                                     style: TextStyle(
                                       color: c.ink.withAlpha(160),
-                                      fontSize: 9,
+                                      fontSize: 12,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -301,7 +302,7 @@ class DiscoveryJourneyCard extends StatelessWidget {
                                 : '≈ ${item.distance!.round()} km · city-level',
                             style: TextStyle(
                               color: c.ink,
-                              fontSize: 8,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                               letterSpacing: .5,
                             ),
@@ -341,7 +342,7 @@ class DiscoveryJourneyCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             location,
-                            style: TextStyle(color: c.muted, fontSize: 10),
+                            style: TextStyle(color: c.muted, fontSize: 12),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -349,7 +350,7 @@ class DiscoveryJourneyCard extends StatelessWidget {
                         if (journey.isSampleData && item.distance != null)
                           Text(
                             'Preview',
-                            style: TextStyle(fontSize: 9, color: c.muted),
+                            style: TextStyle(fontSize: 12, color: c.muted),
                           ),
                       ],
                     ),
@@ -372,7 +373,7 @@ class DiscoveryJourneyCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: c.muted,
-                        fontSize: 11,
+                        fontSize: 12,
                         height: 1.5,
                       ),
                     ),
@@ -383,7 +384,7 @@ class DiscoveryJourneyCard extends StatelessWidget {
                           'Meet ${journey.type.displayName.toLowerCase()}',
                           style: TextStyle(
                             color: c.ink,
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -459,7 +460,7 @@ class PersonalJourneyCard extends StatelessWidget {
                           : 'STARTED BY YOU',
                       style: TextStyle(
                         color: c.muted,
-                        fontSize: 8,
+                        fontSize: 12,
                         letterSpacing: 1,
                         fontWeight: FontWeight.w600,
                       ),
@@ -478,7 +479,7 @@ class PersonalJourneyCard extends StatelessWidget {
                     const SizedBox(height: 7),
                     Text(
                       '${stats.people} people · ${stats.countries} countries',
-                      style: TextStyle(fontSize: 10, color: c.muted),
+                      style: TextStyle(fontSize: 12, color: c.muted),
                     ),
                     if (journey.goalTarget != null &&
                         journey.goalTarget! > 0) ...[

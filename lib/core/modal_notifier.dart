@@ -18,6 +18,8 @@ Future<T?> showManagedModalBottomSheet<T>({
   try {
     final result = await showModalBottomSheet<T>(
       context: context,
+      useRootNavigator: true,
+      useSafeArea: true,
       builder: builder,
       isScrollControlled: isScrollControlled,
       backgroundColor: backgroundColor,

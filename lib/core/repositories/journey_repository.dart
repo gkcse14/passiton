@@ -78,6 +78,18 @@ class JourneyRepository extends ChangeNotifier {
     }
   }
 
+  Future<void> reset() async {
+    final defaults = JourneyRepository();
+    await _save(defaults.journeys, defaults.stops);
+    defaults.dispose();
+  }
+
+  Future<String> displayName() async {
+    final prefs = _preferences ?? await SharedPreferences.getInstance();
+    final name = prefs.getString('display_name')?.trim();
+    return name == null || name.isEmpty ? kLocalUserName : name;
+  }
+
   Future<JourneyObject> create({
     required ObjectType type,
     required String name,
@@ -94,6 +106,7 @@ class JourneyRepository extends ChangeNotifier {
     if (name.trim().length < 3 || mission.trim().length < 5) {
       throw ArgumentError('Add a name and mission first.');
     }
+    final creatorDisplayName = await displayName();
     final now = DateTime.now();
     final id = 'local-${now.microsecondsSinceEpoch}';
     final journey = JourneyObject(
@@ -103,7 +116,7 @@ class JourneyRepository extends ChangeNotifier {
       mission: mission.trim(),
       openingNote: openingNote?.trim(),
       creatorId: kLocalUserId,
-      creatorName: kLocalUserName,
+      creatorName: creatorDisplayName,
       createdAt: now,
       goalType: goalType,
       goalTarget: goalTarget,
@@ -115,7 +128,7 @@ class JourneyRepository extends ChangeNotifier {
       id: '$id-origin',
       objectId: id,
       participantId: kLocalUserId,
-      displayName: kLocalUserName,
+      displayName: await displayName(),
       message: openingNote?.trim(),
       locationVisibility: visibility,
       cityName: journey.originCity,
@@ -158,7 +171,7 @@ class JourneyRepository extends ChangeNotifier {
         objectId: id,
         parentStopId: previous.isEmpty ? null : previous.first.id,
         participantId: kLocalUserId,
-        displayName: kLocalUserName,
+        displayName: await displayName(),
         message: message?.trim(),
         locationVisibility: LocationVisibility.hidden,
         createdAt: DateTime.now(),

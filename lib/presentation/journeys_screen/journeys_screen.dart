@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:passiton/core/motion_notifier.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/data/sample_data.dart';
@@ -82,7 +82,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
     setState(() => _saving = true);
     try {
       await _repo.follow(journey.id, !journey.isFollowed);
-      HapticFeedback.selectionClick();
+      selectionFeedback();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -256,7 +256,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
                                           ? 'Within ${_radius.round()} km · approximate city locations'
                                           : 'Little travellers. A world of possibility.',
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 12,
                                         color: c.muted,
                                       ),
                                     ),
@@ -313,7 +313,11 @@ class _JourneysScreenState extends State<JourneysScreen> {
                               child: _emptyNearby(c),
                             )
                           : SizedBox(
-                              height: 316,
+                              height:
+                                  360 +
+                                  (MediaQuery.textScalerOf(context).scale(14) -
+                                          14) *
+                                      10,
                               child: ListView.separated(
                                 key: ValueKey(
                                   '${_type?.name}-${_area?.label}-$_everywhere-$_radius',
@@ -326,7 +330,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(width: 14),
                                 itemBuilder: (context, i) => SizedBox(
-                                  width: 238,
+                                  width: 260,
                                   child: DiscoveryJourneyCard(
                                     item: items[i],
                                     onOpen: () => _open(items[i].journey),
@@ -374,7 +378,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
                                         'Find it. Add your chapter. Pass it on.',
                                         style: TextStyle(
                                           color: c.muted,
-                                          fontSize: 10,
+                                          fontSize: 12,
                                         ),
                                       ),
                                     ],
@@ -400,7 +404,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Your little world',
+                            'Your journeys',
                             style: TextStyle(
                               fontSize: 22,
                               letterSpacing: -.65,
@@ -410,8 +414,8 @@ class _JourneysScreenState extends State<JourneysScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Every connection leaves a little mark.',
-                            style: TextStyle(fontSize: 11, color: c.muted),
+                            'The stories you’ve started, joined, and saved.',
+                            style: TextStyle(fontSize: 12, color: c.muted),
                           ),
                           const SizedBox(height: 15),
                           Wrap(
@@ -433,7 +437,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
                                 selectedColor: c.sage,
                                 backgroundColor: c.canvas,
                                 labelStyle: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   color: c.ink,
                                 ),
                                 side: BorderSide(
@@ -521,7 +525,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
                               'A small act can travel a long way.',
                               style: TextStyle(
                                 color: c.muted,
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
@@ -533,12 +537,12 @@ class _JourneysScreenState extends State<JourneysScreen> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: c.muted,
-                                fontSize: 9,
+                                fontSize: 12,
                                 height: 1.5,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 120),
+                          const SizedBox(height: 32),
                         ],
                       ),
                     ),
@@ -593,7 +597,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
                         _area?.label ?? 'Find objects near you',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: c.muted, fontSize: 10),
+                        style: TextStyle(color: c.muted, fontSize: 12),
                       ),
                     ),
                     Icon(
@@ -611,16 +615,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
       IconButton(
         tooltip: 'How journeys work',
         onPressed: _howItWorks,
-        icon: Icon(Icons.auto_awesome_outlined, color: c.ink, size: 21),
-      ),
-      IconButton(
-        tooltip: 'Your profile',
-        onPressed: () => context.go(AppRoutes.youScreen),
-        style: IconButton.styleFrom(
-          backgroundColor: c.surface,
-          side: BorderSide(color: c.line),
-        ),
-        icon: Icon(Icons.person_outline_rounded, color: c.ink, size: 21),
+        icon: Icon(Icons.help_outline_rounded, color: c.ink, size: 21),
       ),
     ],
   );
@@ -645,14 +640,14 @@ class _JourneysScreenState extends State<JourneysScreen> {
                     'Something lovely could be close by.',
                     style: TextStyle(
                       color: c.ink,
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Choose your area to discover nearby objects',
-                    style: TextStyle(color: c.muted, fontSize: 10),
+                    style: TextStyle(color: c.muted, fontSize: 12),
                   ),
                 ],
               ),
@@ -688,14 +683,14 @@ class _JourneysScreenState extends State<JourneysScreen> {
           label: Text(type?.displayName ?? 'All objects'),
           labelStyle: TextStyle(
             color: selected ? Colors.white : c.ink,
-            fontSize: 11,
+            fontSize: 12,
           ),
           selectedColor: JourneyColors.green,
           backgroundColor: c.surface,
           side: BorderSide(color: selected ? JourneyColors.green : c.line),
           shape: const StadiumBorder(),
           onSelected: (_) {
-            HapticFeedback.selectionClick();
+            selectionFeedback();
             setState(() => _type = type);
           },
         );

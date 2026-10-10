@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
           valueListenable: themeModeNotifier,
           builder: (context, themeMode, _) {
             return MaterialApp.router(
-              title: 'passiton',
+              title: 'Pass It On',
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: themeMode,
@@ -70,7 +70,6 @@ class MyApp extends StatelessWidget {
                   valueListenable: reduceMotionNotifier,
                   builder: (context, reduced, _) => MediaQuery(
                     data: MediaQuery.of(context).copyWith(
-                      textScaler: TextScaler.linear(1.0),
                       disableAnimations:
                           reduced || MediaQuery.disableAnimationsOf(context),
                     ),

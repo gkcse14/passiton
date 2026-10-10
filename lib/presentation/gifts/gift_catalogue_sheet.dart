@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:passiton/core/motion_notifier.dart';
 
 import '../../../core/modal_notifier.dart';
 import '../../../core/models/gift_models.dart';
@@ -92,7 +92,10 @@ class _GiftCatalogueSheetState extends State<GiftCatalogueSheet> {
     final isDark = theme.brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth < 360 ? 2 : 3;
+    final crossAxisCount =
+        screenWidth < 420 || MediaQuery.textScalerOf(context).scale(14) > 18
+        ? 2
+        : 3;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.92,
@@ -160,7 +163,7 @@ class _GiftCatalogueSheetState extends State<GiftCatalogueSheet> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Your gift stays with this journey for everyone to enjoy.',
+                  'Add a gift to this journey’s collection on your device.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: isDark
                         ? AppTheme.textSecondaryDark
@@ -170,7 +173,7 @@ class _GiftCatalogueSheetState extends State<GiftCatalogueSheet> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Demo prices · No real charges',
+                  'Local preview · No real charges',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: AppTheme.secondary,
                     fontWeight: FontWeight.w600,
@@ -188,7 +191,7 @@ class _GiftCatalogueSheetState extends State<GiftCatalogueSheet> {
                     ? 'All'
                     : f == _CatalogueFilter.free
                     ? 'Free'
-                    : 'Paid';
+                    : 'Demo gifts';
                 final selected = _filter == f;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -256,7 +259,7 @@ class _GiftCatalogueSheetState extends State<GiftCatalogueSheet> {
                   onTap: alreadySent
                       ? null
                       : () {
-                          HapticFeedback.selectionClick();
+                          selectionFeedback();
                           setState(() => _selected = isSelected ? null : item);
                         },
                 );
@@ -919,7 +922,7 @@ class _GiftSuccessSheetState extends State<GiftSuccessSheet>
       CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5)),
     );
     _controller.forward();
-    HapticFeedback.mediumImpact();
+    selectionFeedback();
   }
 
   @override

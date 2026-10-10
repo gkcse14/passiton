@@ -37,7 +37,9 @@ final GoRouter appRouter = GoRouter(
             child: child,
           );
         },
-        transitionDuration: const Duration(milliseconds: 280),
+        transitionDuration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 280),
       ),
     ),
     GoRoute(
@@ -54,7 +56,9 @@ final GoRouter appRouter = GoRouter(
             child: child,
           );
         },
-        transitionDuration: const Duration(milliseconds: 280),
+        transitionDuration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 280),
       ),
     ),
     GoRoute(
@@ -80,7 +84,9 @@ final GoRouter appRouter = GoRouter(
               child: child,
             );
           },
-          transitionDuration: const Duration(milliseconds: 280),
+          transitionDuration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 280),
         );
       },
     ),
