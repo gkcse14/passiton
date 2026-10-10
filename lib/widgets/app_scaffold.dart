@@ -98,7 +98,7 @@ class AppScaffold extends StatelessWidget {
                   ),
                 ),
               ),
-            Expanded(child: navigationShell),
+            Expanded(child: Semantics(container: true, child: navigationShell)),
           ],
         ),
         bottomNavigationBar: wide

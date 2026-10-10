@@ -352,6 +352,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
+      final semantics = tester.ensureSemantics();
       appRouter.go(AppRoutes.journeysScreen);
       await tester.pumpWidget(
         MaterialApp.router(
@@ -366,6 +367,16 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       expect(find.byType(NavigationBar), findsNothing);
+      final rootNode = tester
+          .binding
+          .renderViews
+          .first
+          .owner!
+          .semanticsOwner!
+          .rootSemanticsNode!;
+      expect(rootNode.toStringDeep(), contains('Explore'));
+      expect(rootNode.toStringDeep(), contains('You'));
+      semantics.dispose();
       expect(find.widgetWithText(ListTile, 'Explore'), findsOneWidget);
       await tester.tap(find.widgetWithText(ListTile, 'Explore'));
       await tester.pump();
