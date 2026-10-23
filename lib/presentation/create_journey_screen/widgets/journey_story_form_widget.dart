@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/models/journey_models.dart';
+import '../../onboarding_screen/widgets/object_artwork_widget.dart';
 
 class JourneyStoryFormWidget extends StatefulWidget {
   final ObjectType objectType;
@@ -137,8 +139,33 @@ class _JourneyStoryFormWidgetState extends State<JourneyStoryFormWidget> {
       children: [
         Text('Give it a story', style: theme.textTheme.headlineLarge),
         const SizedBox(height: 8),
-        const Text('A name and a simple mission are all you need.'),
-        const SizedBox(height: 28),
+        Text(
+          'A name and a simple mission are all you need.',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Row(
+            children: [
+              ObjectArtworkWidget(type: widget.objectType, size: 64),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Your ${widget.objectType.displayName.toLowerCase()} is ready for a name.',
+                  style: theme.textTheme.titleSmall,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
         TextField(
           controller: _nameController,
           maxLength: 40,

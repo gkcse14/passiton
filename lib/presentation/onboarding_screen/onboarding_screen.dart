@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/models/journey_models.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/page_layout.dart';
@@ -35,45 +36,89 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Scaffold(
       body: SafeArea(
         child: PageFrame(
-          maxWidth: 960,
+          maxWidth: 880,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(28),
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 28),
             child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.all_inclusive_rounded,
-                      color: theme.colorScheme.primary,
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.all_inclusive_rounded,
+                        color: scheme.primary,
+                        size: 22,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Text('pass it on', style: theme.textTheme.titleLarge),
                   ],
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 22),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.fromLTRB(22, 18, 22, 26),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(32),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        scheme.primaryContainer,
+                        Color.alphaBlend(
+                          const Color(0x66F6C56B),
+                          scheme.primaryContainer,
+                        ),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(36),
                   ),
                   child: Column(
                     children: [
-                      const ObjectShowcase(type: ObjectType.potato, size: 180),
-                      const SizedBox(height: 16),
+                      const SizedBox(
+                        height: 190,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          clipBehavior: Clip.none,
+                          children: [
+                            ObjectShowcase(type: ObjectType.potato, size: 168),
+                            Positioned(
+                              top: 8,
+                              right: 24,
+                              child: ObjectArtworkWidget(
+                                type: ObjectType.star,
+                                size: 52,
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              left: 16,
+                              child: ObjectArtworkWidget(
+                                type: ObjectType.heart,
+                                size: 58,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       Text(
                         'Small things.\nBig stories.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.displayLarge,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 440),
+                        constraints: const BoxConstraints(maxWidth: 460),
                         child: Text(
                           'Give a little object a mission. Add a kind moment. See where its story goes.',
                           textAlign: TextAlign.center,
@@ -83,48 +128,72 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 22),
                 for (final step in [
                   (
+                    '1',
                     Icons.explore_outlined,
                     'Find your traveller',
                     'Explore a journey or create your own.',
                   ),
                   (
+                    '2',
                     Icons.edit_note_rounded,
                     'Add your chapter',
                     'Leave a note and become part of the story.',
                   ),
                   (
+                    '3',
                     Icons.favorite_outline_rounded,
                     'Keep the kindness going',
                     'Save a favourite, leave a gift, or pass it on.',
                   ),
                 ])
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: theme.colorScheme.primaryContainer,
-                          child: Icon(
-                            step.$1,
-                            color: theme.colorScheme.primary,
-                          ),
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Material(
+                      color: scheme.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        side: BorderSide(color: scheme.outline),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: scheme.primaryContainer,
+                              child: Text(
+                                step.$1,
+                                style: TextStyle(
+                                  color: scheme.primary,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    step.$3,
+                                    style: theme.textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    step.$4,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(step.$2, color: scheme.primary),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(step.$2, style: theme.textTheme.titleMedium),
-                              const SizedBox(height: 4),
-                              Text(step.$3, style: theme.textTheme.bodyMedium),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 const SizedBox(height: 8),

@@ -25,29 +25,36 @@ class PageHeading extends StatelessWidget {
     super.key,
   });
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.headlineLarge,
-            ),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 42,
+          height: 5,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary,
+            borderRadius: BorderRadius.circular(99),
           ),
-          if (action != null) action!,
-        ],
-      ),
-      const SizedBox(height: 8),
-      Text(
-        subtitle,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-      ),
-    ],
-  );
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: Text(title, style: theme.textTheme.headlineLarge)),
+            if (action != null) action!,
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          subtitle,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class InfoNotice extends StatelessWidget {
@@ -59,30 +66,41 @@ class InfoNotice extends StatelessWidget {
     super.key,
   });
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Theme.of(context).colorScheme.onPrimaryContainer,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            message,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: scheme.secondary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                message,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onSecondaryContainer,
+                  height: 1.45,
+                ),
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }

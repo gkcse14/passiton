@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../widgets/page_layout.dart';
 
 import '../../core/models/journey_models.dart';
@@ -256,37 +257,24 @@ class _CreateJourneyScreenState extends State<CreateJourneyScreen>
                 ),
                 child: SizedBox(
                   width: double.infinity,
-                  height: 52,
+                  height: 54,
                   child: ElevatedButton(
                     onPressed: _canProceed && !_isSubmitting
                         ? _handleContinue
                         : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: AppTheme.borderLight,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26),
-                      ),
-                    ),
                     child: _isSubmitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           )
                         : Text(
                             _currentStep == 2
                                 ? 'Start its journey'
                                 : 'Continue',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
                           ),
                   ),
                 ),

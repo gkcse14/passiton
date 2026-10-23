@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:passiton/core/motion_notifier.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/data/sample_data.dart';
 import '../../core/models/journey_models.dart';
 import '../../core/repositories/journey_repository.dart';
@@ -293,8 +294,15 @@ class _JourneysScreenState extends State<JourneysScreen> {
                             ],
                           ),
                           if (_area == null) ...[
-                            const SizedBox(height: 16),
-                            _locationPrompt(c),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Pick a city or use your location. We only sort by area.',
+                              style: TextStyle(
+                                color: c.muted,
+                                fontSize: 13,
+                                height: 1.4,
+                              ),
+                            ),
                           ],
                           const SizedBox(height: 15),
                         ],
@@ -346,18 +354,21 @@ class _JourneysScreenState extends State<JourneysScreen> {
                     padding: const EdgeInsets.fromLTRB(22, 26, 22, 0),
                     sliver: SliverToBoxAdapter(
                       child: Material(
-                        color: c.sage,
-                        borderRadius: BorderRadius.circular(22),
+                        color: c.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          side: BorderSide(color: c.line),
+                        ),
                         child: InkWell(
                           onTap: _howItWorks,
-                          borderRadius: BorderRadius.circular(22),
+                          borderRadius: BorderRadius.circular(24),
                           child: Padding(
-                            padding: const EdgeInsets.all(18),
+                            padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
                                 ObjectArtworkWidget(
                                   type: ObjectType.seedling,
-                                  size: 48,
+                                  size: 52,
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
@@ -366,11 +377,11 @@ class _JourneysScreenState extends State<JourneysScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Good things grow when shared.',
+                                        'New here? Three easy steps.',
                                         style: TextStyle(
                                           color: c.ink,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
                                       const SizedBox(height: 5),
@@ -378,7 +389,8 @@ class _JourneysScreenState extends State<JourneysScreen> {
                                         'Find it. Add your chapter. Pass it on.',
                                         style: TextStyle(
                                           color: c.muted,
-                                          fontSize: 12,
+                                          fontSize: 13,
+                                          height: 1.35,
                                         ),
                                       ),
                                     ],
@@ -387,7 +399,7 @@ class _JourneysScreenState extends State<JourneysScreen> {
                                 const SizedBox(width: 8),
                                 Icon(
                                   Icons.arrow_forward_rounded,
-                                  color: c.ink,
+                                  color: JourneyColors.green,
                                   size: 18,
                                 ),
                               ],
@@ -556,112 +568,94 @@ class _JourneysScreenState extends State<JourneysScreen> {
     );
   }
 
-  Widget _header(JourneyColors c) => Row(
+  Widget _header(JourneyColors c) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Container(
-        width: 39,
-        height: 39,
-        decoration: BoxDecoration(color: c.sage, shape: BoxShape.circle),
-        child: const Icon(
-          Icons.all_inclusive_rounded,
-          color: JourneyColors.green,
-          size: 26,
-        ),
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+      Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: c.sage,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.all_inclusive_rounded,
+              color: JourneyColors.green,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
               'pass it on',
               style: TextStyle(
                 fontSize: 22,
-                letterSpacing: -.8,
+                letterSpacing: -0.8,
                 color: c.ink,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            InkWell(
-              onTap: _chooseArea,
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.near_me_outlined, size: 12, color: c.muted),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        _area?.label ?? 'Find objects near you',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: c.muted, fontSize: 12),
-                      ),
-                    ),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 16,
-                      color: c.muted,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          IconButton(
+            tooltip: 'How journeys work',
+            onPressed: _howItWorks,
+            icon: Icon(Icons.help_outline_rounded, color: c.ink, size: 22),
+          ),
+        ],
       ),
-      IconButton(
-        tooltip: 'How journeys work',
-        onPressed: _howItWorks,
-        icon: Icon(Icons.help_outline_rounded, color: c.ink, size: 21),
+      const SizedBox(height: 12),
+      Material(
+        color: c.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: c.line),
+        ),
+        child: InkWell(
+          onTap: _chooseArea,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.near_me_rounded,
+                  size: 18,
+                  color: JourneyColors.green,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _area?.label ?? 'Find objects near you',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: c.ink,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Text(
+                  _area == null ? 'Choose' : 'Change',
+                  style: const TextStyle(
+                    color: JourneyColors.green,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     ],
   );
 
-  Widget _locationPrompt(JourneyColors c) => Material(
-    color: c.sage,
-    borderRadius: BorderRadius.circular(18),
-    child: InkWell(
-      onTap: _chooseArea,
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Icon(Icons.radar_rounded, color: c.ink, size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Something lovely could be close by.',
-                    style: TextStyle(
-                      color: c.ink,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Choose your area to discover nearby objects',
-                    style: TextStyle(color: c.muted, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            Icon(Icons.arrow_forward_rounded, color: c.ink, size: 17),
-          ],
-        ),
-      ),
-    ),
-  );
-
   Widget _objectFilters(JourneyColors c) => SizedBox(
-    height: 42,
+    height: 46 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.6),
     child: ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 22),
       scrollDirection: Axis.horizontal,

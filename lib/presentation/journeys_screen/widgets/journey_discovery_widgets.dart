@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../core/data/sample_data.dart';
 import '../../../core/models/journey_models.dart';
@@ -9,15 +10,18 @@ class JourneyColors {
   final bool dark;
   JourneyColors(BuildContext context)
     : dark = Theme.of(context).brightness == Brightness.dark;
-  Color get ink => dark ? const Color(0xFFF3F0E8) : const Color(0xFF263F36);
-  Color get muted => dark ? const Color(0xFFB4BEB5) : const Color(0xFF657167);
+  Color get ink => dark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight;
+  Color get muted =>
+      dark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight;
   Color get canvas => dark ? AppTheme.backgroundDark : AppTheme.backgroundLight;
-  Color get surface => dark ? const Color(0xFF1D2A24) : Colors.white;
-  Color get sage => dark ? const Color(0xFF293D32) : const Color(0xFFE9EFE4);
-  Color get peach => dark ? const Color(0xFF3B3027) : const Color(0xFFF7EADD);
-  Color get line => dark ? const Color(0xFF33443B) : const Color(0xFFE5E8DE);
-  static const green = Color(0xFF345B49);
-  static const orange = Color(0xFFC85D3A);
+  Color get surface => dark ? AppTheme.surfaceDark : AppTheme.surfaceLight;
+  Color get sage => dark ? const Color(0xFF3A2A22) : AppTheme.sand;
+  Color get peach => dark ? const Color(0xFF3A261C) : const Color(0xFFF8E3D4);
+  Color get line => dark ? AppTheme.borderDark : AppTheme.borderLight;
+  // Clay is the action color. The name stays so existing call sites keep working.
+  static const green = AppTheme.primary;
+  static const orange = Color(0xFFE07A3D);
+  static const forest = AppTheme.secondary;
 }
 
 class JourneyWelcome extends StatelessWidget {
@@ -28,161 +32,163 @@ class JourneyWelcome extends StatelessWidget {
     final c = JourneyColors(context);
     return LayoutBuilder(
       builder: (context, box) {
-        final wide = box.maxWidth > 650;
-        final compact = box.maxWidth < 310;
+        final wide = box.maxWidth > 720;
+        final compact = box.maxWidth < 360;
+        final copy = _WelcomeCopy(onCreate: onCreate, compact: compact);
+        final art = _WelcomeArt(wide: wide);
         return Container(
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: c.peach,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                c.peach,
+                Color.alphaBlend(AppTheme.honey.withAlpha(70), c.peach),
+              ],
+            ),
             borderRadius: BorderRadius.circular(32),
+            boxShadow: AppTheme.lift(c.dark),
           ),
           child: Stack(
             children: [
               Positioned.fill(
-                child: CustomPaint(painter: WanderingPath(c.ink.withAlpha(18))),
+                child: CustomPaint(painter: WanderingPath(c.ink.withAlpha(22))),
               ),
               Padding(
-                padding: EdgeInsets.all(wide ? 36 : 22),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: wide ? 6 : 6,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                padding: EdgeInsets.all(wide ? 36 : 20),
+                child: wide
+                    ? Row(
                         children: [
-                          Text(
-                            'A LITTLE WONDER, EVERY DAY',
-                            style: TextStyle(
-                              color: c.ink,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            'Small things.\nBig stories.',
-                            style: TextStyle(
-                              fontSize: wide
-                                  ? 46
-                                  : compact
-                                  ? 25
-                                  : 30,
-                              height: 1.08,
-                              letterSpacing: -1.3,
-                              color: c.ink,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Find a little wonder.\nGive its story a new chapter.',
-                            style: TextStyle(
-                              color: c.ink.withAlpha(180),
-                              fontSize: 12,
-                              height: 1.55,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          FilledButton.icon(
-                            onPressed: onCreate,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: JourneyColors.green,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 17,
-                                vertical: 14,
-                              ),
-                            ),
-                            icon: const Icon(Icons.add_rounded, size: 17),
-                            label: Text(
-                              compact ? 'Start a story' : 'Start a journey',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
+                          Expanded(flex: 6, child: copy),
+                          const SizedBox(width: 12),
+                          Expanded(flex: 5, child: art),
                         ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [art, const SizedBox(height: 8), copy],
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      flex: 4,
-                      child: SizedBox(
-                        height: wide ? 238 : 220,
-                        child: LayoutBuilder(
-                          builder: (context, art) => Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned(
-                                right: -14,
-                                top: 48,
-                                child: Container(
-                                  width: art.maxWidth + 18,
-                                  height: art.maxWidth + 18,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: c.surface.withAlpha(100),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 36,
-                                left: -12,
-                                right: -20,
-                                child: ObjectShowcase(
-                                  type: ObjectType.potato,
-                                  size: wide ? 218 : 150,
-                                ),
-                              ),
-                              Positioned(
-                                top: -4,
-                                right: 6,
-                                child: Transform.rotate(
-                                  angle: .18,
-                                  child: ObjectArtworkWidget(
-                                    type: ObjectType.star,
-                                    size: wide ? 72 : 55,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                left: -18,
-                                child: Transform.rotate(
-                                  angle: -.18,
-                                  child: ObjectArtworkWidget(
-                                    type: ObjectType.heart,
-                                    size: wide ? 90 : 65,
-                                  ),
-                                ),
-                              ),
-                              if (!compact)
-                                Positioned(
-                                  bottom: 12,
-                                  right: -6,
-                                  child: Text(
-                                    'made to be passed on',
-                                    style: TextStyle(
-                                      color: c.ink.withAlpha(160),
-                                      fontSize: 12,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _WelcomeCopy extends StatelessWidget {
+  final VoidCallback onCreate;
+  final bool compact;
+  const _WelcomeCopy({required this.onCreate, required this.compact});
+  @override
+  Widget build(BuildContext context) {
+    final c = JourneyColors(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: c.surface.withAlpha(210),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            'A LITTLE WONDER, EVERY DAY',
+            style: TextStyle(
+              color: c.ink,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.1,
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'Small things.\nBig stories.',
+          style: TextStyle(
+            fontSize: compact ? 32 : 44,
+            height: 1.02,
+            letterSpacing: -1.2,
+            color: c.ink,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Pick a little traveller, leave a kind note, and pass its story on.',
+          style: TextStyle(
+            color: c.ink.withAlpha(190),
+            fontSize: 14,
+            height: 1.45,
+          ),
+        ),
+        const SizedBox(height: 18),
+        FilledButton.icon(
+          onPressed: onCreate,
+          style: FilledButton.styleFrom(
+            backgroundColor: JourneyColors.green,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          ),
+          icon: const Icon(Icons.add_rounded, size: 18),
+          label: Text(compact ? 'Start a story' : 'Start a journey'),
+        ),
+      ],
+    );
+  }
+}
+
+class _WelcomeArt extends StatelessWidget {
+  final bool wide;
+  const _WelcomeArt({required this.wide});
+  @override
+  Widget build(BuildContext context) {
+    final c = JourneyColors(context);
+    return SizedBox(
+      height: wide ? 250 : 176,
+      child: LayoutBuilder(
+        builder: (context, art) => Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              child: Container(
+                width: wide ? 210 : 148,
+                height: wide ? 210 : 148,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: c.surface.withAlpha(150),
+                ),
+              ),
+            ),
+            ObjectShowcase(type: ObjectType.potato, size: wide ? 210 : 146),
+            Positioned(
+              top: 0,
+              right: wide ? 8 : 18,
+              child: Transform.rotate(
+                angle: .18,
+                child: ObjectArtworkWidget(
+                  type: ObjectType.star,
+                  size: wide ? 72 : 52,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: wide ? 0 : 12,
+              child: Transform.rotate(
+                angle: -.16,
+                child: ObjectArtworkWidget(
+                  type: ObjectType.heart,
+                  size: wide ? 84 : 58,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -250,156 +256,164 @@ class DiscoveryJourneyCard extends StatelessWidget {
         item.latestStop?.locationVisibility == LocationVisibility.city
         ? item.latestStop?.cityName ?? 'A new adventure'
         : 'Somewhere wonderful';
-    return Material(
-      color: c.surface,
-      borderRadius: BorderRadius.circular(26),
-      child: InkWell(
-        onTap: onOpen,
-        borderRadius: BorderRadius.circular(26),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: c.line),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: journey.type.accentColor.withAlpha(c.dark ? 30 : 24),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: WanderingPath(c.ink.withAlpha(22)),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: AppTheme.lift(c.dark),
+      ),
+      child: Material(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(28),
+        child: InkWell(
+          onTap: onOpen,
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: c.line),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: journey.type.accentColor.withAlpha(
+                        c.dark ? 30 : 24,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: WanderingPath(c.ink.withAlpha(22)),
+                          ),
                         ),
-                      ),
-                      Center(
-                        child: ObjectShowcase(type: journey.type, size: 144),
-                      ),
-                      Positioned(
-                        left: 10,
-                        top: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: c.surface.withAlpha(220),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            item.distance == null
-                                ? (journey.isSampleData
-                                      ? 'PREVIEW'
-                                      : 'YOUR CREATION')
-                                : '≈ ${item.distance!.round()} km · city-level',
-                            style: TextStyle(
-                              color: c.ink,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: .5,
+                        Center(
+                          child: ObjectShowcase(type: journey.type, size: 144),
+                        ),
+                        Positioned(
+                          left: 10,
+                          top: 10,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: c.surface.withAlpha(220),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              item.distance == null
+                                  ? (journey.isSampleData
+                                        ? 'PREVIEW'
+                                        : 'YOUR CREATION')
+                                  : '≈ ${item.distance!.round()} km · city-level',
+                              style: TextStyle(
+                                color: c.ink,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: .5,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        right: 4,
-                        top: 3,
-                        child: IconButton(
-                          tooltip: journey.isFollowed
-                              ? 'Unsave ${journey.name}'
-                              : 'Save ${journey.name}',
-                          onPressed: saving ? null : onSave,
-                          icon: Icon(
-                            journey.isFollowed
-                                ? Icons.bookmark_rounded
-                                : Icons.bookmark_border_rounded,
-                            color: c.ink,
-                            size: 20,
+                        Positioned(
+                          right: 4,
+                          top: 3,
+                          child: IconButton(
+                            tooltip: journey.isFollowed
+                                ? 'Unsave ${journey.name}'
+                                : 'Save ${journey.name}',
+                            onPressed: saving ? null : onSave,
+                            icon: Icon(
+                              journey.isFollowed
+                                  ? Icons.bookmark_rounded
+                                  : Icons.bookmark_border_rounded,
+                              color: c.ink,
+                              size: 20,
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.place_outlined, size: 12, color: c.muted),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              location,
+                              style: TextStyle(color: c.muted, fontSize: 12),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (journey.isSampleData && item.distance != null)
+                            Text(
+                              'Preview',
+                              style: TextStyle(fontSize: 12, color: c.muted),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        journey.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: c.ink,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -.3,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        journey.mission,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: c.muted,
+                          fontSize: 12,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Text(
+                            'Open story',
+                            style: TextStyle(
+                              color: JourneyColors.green,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: JourneyColors.green,
+                            size: 16,
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.place_outlined, size: 12, color: c.muted),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            location,
-                            style: TextStyle(color: c.muted, fontSize: 12),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (journey.isSampleData && item.distance != null)
-                          Text(
-                            'Preview',
-                            style: TextStyle(fontSize: 12, color: c.muted),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      journey.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: c.ink,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -.3,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      journey.mission,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: c.muted,
-                        fontSize: 12,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Text(
-                          'Meet ${journey.type.displayName.toLowerCase()}',
-                          style: TextStyle(
-                            color: c.ink,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Spacer(),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          color: c.ink,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -424,84 +438,90 @@ class PersonalJourneyCard extends StatelessWidget {
     final progress = journey.goalType == GoalType.countries
         ? stats.countries
         : stats.people;
-    return Material(
-      color: c.surface,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        onTap: onOpen,
+    return DecoratedBox(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: c.line),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 76,
-                height: 84,
-                decoration: BoxDecoration(
-                  color: journey.type.accentColor.withAlpha(24),
-                  borderRadius: BorderRadius.circular(18),
+        boxShadow: AppTheme.lift(c.dark),
+      ),
+      child: Material(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: onOpen,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: c.line),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 76,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    color: journey.type.accentColor.withAlpha(24),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Center(
+                    child: ObjectArtworkWidget(type: journey.type, size: 70),
+                  ),
                 ),
-                child: Center(
-                  child: ObjectArtworkWidget(type: journey.type, size: 70),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      journey.isSampleData
-                          ? 'PREVIEW JOURNEY'
-                          : 'STARTED BY YOU',
-                      style: TextStyle(
-                        color: c.muted,
-                        fontSize: 12,
-                        letterSpacing: 1,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      journey.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: c.ink,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    Text(
-                      '${stats.people} people · ${stats.countries} countries',
-                      style: TextStyle(fontSize: 12, color: c.muted),
-                    ),
-                    if (journey.goalTarget != null &&
-                        journey.goalTarget! > 0) ...[
-                      const SizedBox(height: 9),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: (progress / journey.goalTarget!).clamp(0, 1),
-                          minHeight: 3,
-                          color: JourneyColors.green,
-                          backgroundColor: c.sage,
-                          semanticsLabel:
-                              '$progress of ${journey.goalTarget} ${journey.goalType.name}',
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        journey.isSampleData
+                            ? 'PREVIEW JOURNEY'
+                            : 'STARTED BY YOU',
+                        style: TextStyle(
+                          color: c.muted,
+                          fontSize: 12,
+                          letterSpacing: 1,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+                      const SizedBox(height: 5),
+                      Text(
+                        journey.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: c.ink,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        '${stats.people} people · ${stats.countries} countries',
+                        style: TextStyle(fontSize: 12, color: c.muted),
+                      ),
+                      if (journey.goalTarget != null &&
+                          journey.goalTarget! > 0) ...[
+                        const SizedBox(height: 9),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: (progress / journey.goalTarget!).clamp(0, 1),
+                            minHeight: 3,
+                            color: JourneyColors.green,
+                            backgroundColor: c.sage,
+                            semanticsLabel:
+                                '$progress of ${journey.goalTarget} ${journey.goalType.name}',
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(Icons.arrow_outward_rounded, size: 18, color: c.ink),
-            ],
+                const SizedBox(width: 8),
+                Icon(Icons.arrow_outward_rounded, size: 18, color: c.ink),
+              ],
+            ),
           ),
         ),
       ),

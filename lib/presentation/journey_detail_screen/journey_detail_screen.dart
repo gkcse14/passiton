@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../widgets/page_layout.dart';
+
 import 'package:go_router/go_router.dart';
 
 import '../../core/data/sample_data.dart';
@@ -246,9 +248,9 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
                     Tab(text: 'Map'),
                   ],
                   labelColor: Theme.of(context).colorScheme.primary,
-                  unselectedLabelColor: Theme.of(
-                    context,
-                  ).colorScheme.onSurfaceVariant,
+                  unselectedLabelColor: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant,
                   indicatorColor: Theme.of(context).colorScheme.primary,
                   indicatorWeight: 2,
                   labelStyle: const TextStyle(
@@ -288,7 +290,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
           ),
@@ -298,12 +300,20 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.card_giftcard_rounded,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.card_giftcard_rounded,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Text('Gifts & support', style: theme.textTheme.titleSmall),
                 const Spacer(),
                 if (hasGifts)
@@ -441,7 +451,7 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
 
   Widget _buildSliverAppBar(ThemeData theme, bool isDark, bool scrolled) {
     return SliverAppBar(
-      expandedHeight: 300,
+      expandedHeight: 340,
       pinned: true,
       backgroundColor: isDark
           ? AppTheme.backgroundDark
@@ -510,15 +520,29 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                _journey.type.accentColor.withAlpha(50),
-                (isDark ? AppTheme.backgroundDark : const Color(0xFFFAF9F5)),
+                _journey.type.accentColor.withAlpha(isDark ? 70 : 90),
+                (isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight),
               ],
             ),
           ),
           child: Center(
-            child: Hero(
-              tag: 'object-artwork-${_journey.id}',
-              child: ObjectShowcase(type: _journey.type, size: 232),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 220,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: (isDark ? AppTheme.surfaceDark : Colors.white)
+                        .withAlpha(160),
+                  ),
+                ),
+                Hero(
+                  tag: 'object-artwork-${_journey.id}',
+                  child: ObjectShowcase(type: _journey.type, size: 220),
+                ),
+              ],
             ),
           ),
         ),
@@ -617,33 +641,28 @@ class _JourneyDetailScreenState extends State<JourneyDetailScreen>
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: SizedBox(
-              height: null,
-              child: ElevatedButton(
-                onPressed: _journey.state == JourneyState.archived
-                    ? null
+            child: ElevatedButton(
+              onPressed: _journey.state == JourneyState.archived
+                  ? null
+                  : isOwner || _hasJoined
+                  ? _showPassItOnSheet
+                  : _joinJourney,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: JourneyColors.green,
+                foregroundColor: Colors.white,
+                disabledForegroundColor: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
+                elevation: 0,
+                minimumSize: const Size.fromHeight(52),
+                shape: const StadiumBorder(),
+              ),
+              child: Text(
+                _journey.state == JourneyState.archived
+                    ? 'Journey complete'
                     : isOwner || _hasJoined
-                    ? _showPassItOnSheet
-                    : _joinJourney,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: JourneyColors.green,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: Text(
-                  _journey.state == JourneyState.archived
-                      ? 'Journey complete'
-                      : isOwner || _hasJoined
-                      ? 'Pass it on'
-                      : 'Join this journey',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
+                    ? 'Pass it on'
+                    : 'Join this journey',
               ),
             ),
           ),
