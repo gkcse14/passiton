@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../theme/app_theme.dart';
 
 class StepIndicatorWidget extends StatelessWidget {
@@ -11,18 +12,22 @@ class StepIndicatorWidget extends StatelessWidget {
     super.key,
   });
 
+  static const _labels = ['Pick an object', 'Name & mission', 'Review'];
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final label = _labels[currentStep.clamp(0, _labels.length - 1)];
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Step ${currentStep + 1} of $totalSteps · ${const ['Choose', 'Your story', 'Ready to go'][currentStep.clamp(0, 2)]}',
+          'Step ${currentStep + 1} of $totalSteps · $label',
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: isDark
                 ? AppTheme.textSecondaryDark
                 : AppTheme.textSecondaryLight,
@@ -32,26 +37,23 @@ class StepIndicatorWidget extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(totalSteps, (i) {
-            final isCompleted = i < currentStep;
-            final isCurrent = i == currentStep;
-            return Row(
-              children: [
-                AnimatedContainer(
-                  duration: MediaQuery.disableAnimationsOf(context)
-                      ? Duration.zero
-                      : const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  width: isCurrent ? 28 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: isCompleted || isCurrent
-                        ? AppTheme.primary
-                        : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+            final done = i <= currentStep;
+            return Padding(
+              padding: EdgeInsets.only(right: i == totalSteps - 1 ? 0 : 6),
+              child: AnimatedContainer(
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                width: i == currentStep ? 36 : 10,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: done
+                      ? AppTheme.primary
+                      : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
+                  borderRadius: BorderRadius.circular(99),
                 ),
-                if (i < totalSteps - 1) const SizedBox(width: 6),
-              ],
+              ),
             );
           }),
         ),

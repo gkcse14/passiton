@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/models/journey_models.dart';
 import '../../core/repositories/journey_repository.dart';
 import '../../core/repositories/gift_repository.dart';
@@ -96,7 +97,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       children: [
                         const PageHeading(
                           title: 'Explore',
-                          subtitle: 'Find a story you’d love to be part of.',
+                          subtitle: 'Search a name, a mission, or the little object itself.',
                         ),
                         const SizedBox(height: 24),
                         TextField(
@@ -222,9 +223,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               const SizedBox(height: 16),
                               Text(
                                 'No journeys found',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall,
                               ),
                               const SizedBox(height: 8),
                               const Text(
@@ -288,102 +289,116 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Widget _card(JourneyObject journey) {
     final colors = Theme.of(context).colorScheme;
     final stops = _repo.stops.where((s) => s.objectId == journey.id).length;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Material(
-                color: journey.type.accentColor.withAlpha(24),
-                child: InkWell(
-                  onTap: () => context.push(
-                    '${AppRoutes.journeyDetailScreen}?id=${Uri.encodeComponent(journey.id)}',
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 180,
-                    child: Center(
-                      child: ObjectArtworkWidget(type: journey.type, size: 150),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    journey.isSampleData ? 'Preview' : 'Your journey',
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 6,
-                right: 6,
-                child: IconButton.filledTonal(
-                  tooltip:
-                      '${journey.isFollowed ? 'Unsave' : 'Save'} ${journey.name}',
-                  onPressed: _saving.contains(journey.id)
-                      ? null
-                      : () => _save(journey),
-                  icon: Icon(
-                    journey.isFollowed
-                        ? Icons.bookmark_rounded
-                        : Icons.bookmark_border_rounded,
-                  ),
-                ),
-              ),
-            ],
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: colors.onSurface.withAlpha(14),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
               children: [
-                Text(
-                  journey.name,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  journey.mission,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '$stops ${stops == 1 ? 'chapter' : 'chapters'} · ${journey.state == JourneyState.active ? 'Active' : 'Archived'}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => context.push(
+                Material(
+                  color: journey.type.accentColor.withAlpha(28),
+                  child: InkWell(
+                    onTap: () => context.push(
                       '${AppRoutes.journeyDetailScreen}?id=${Uri.encodeComponent(journey.id)}',
                     ),
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                    label: const Text('View journey'),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 188,
+                      child: Center(
+                        child: ObjectArtworkWidget(
+                          type: journey.type,
+                          size: 150,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      journey.isSampleData ? 'Preview' : 'Your journey',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: IconButton.filledTonal(
+                    tooltip:
+                        '${journey.isFollowed ? 'Unsave' : 'Save'} ${journey.name}',
+                    onPressed: _saving.contains(journey.id)
+                        ? null
+                        : () => _save(journey),
+                    icon: Icon(
+                      journey.isFollowed
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    journey.name,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    journey.mission,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: colors.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '$stops ${stops == 1 ? 'chapter' : 'chapters'} · ${journey.state == JourneyState.active ? 'Active' : 'Archived'}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.push(
+                        '${AppRoutes.journeyDetailScreen}?id=${Uri.encodeComponent(journey.id)}',
+                      ),
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                      label: const Text('View journey'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

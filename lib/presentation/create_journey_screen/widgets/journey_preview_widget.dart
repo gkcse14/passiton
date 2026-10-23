@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/models/journey_models.dart';
 import '../../../theme/app_theme.dart';
 import '../../onboarding_screen/widgets/object_artwork_widget.dart';
@@ -44,10 +45,10 @@ class _JourneyPreviewWidgetState extends State<JourneyPreviewWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Preview', style: theme.textTheme.headlineSmall),
+          Text('Ready when you are', style: theme.textTheme.headlineSmall),
           const SizedBox(height: 4),
           Text(
-            'This is how your journey will look.',
+            'This is how your journey will look. Nothing is published yet.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: isDark
                   ? AppTheme.textSecondaryDark
@@ -61,7 +62,7 @@ class _JourneyPreviewWidgetState extends State<JourneyPreviewWidget> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF1E4038), Color(0xFF0D2820)],
+                colors: [Color(0xFFE36A3A), Color(0xFF8C2E12)],
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [

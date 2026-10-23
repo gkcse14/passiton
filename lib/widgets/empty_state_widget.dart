@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 import '../core/models/journey_models.dart';
 import '../presentation/onboarding_screen/widgets/object_artwork_widget.dart';
@@ -39,7 +40,7 @@ class EmptyStateWidget extends StatelessWidget {
             Text(
               subtitle,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondaryLight,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),

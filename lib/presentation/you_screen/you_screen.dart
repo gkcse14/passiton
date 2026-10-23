@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/data/sample_data.dart';
 import '../../core/data/gift_catalogue.dart';
 import '../../core/models/journey_models.dart';
@@ -345,22 +346,27 @@ class _YouScreenState extends State<YouScreen> {
               children: [
                 const PageHeading(
                   title: 'You',
-                  subtitle: 'Your journeys, your little corner of the world.',
+                  subtitle: 'Your name, your journeys, and how the app feels.',
                 ),
                 const SizedBox(height: 24),
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(18),
                     child: Row(
                       children: [
                         CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer,
-                          child: const Icon(
-                            Icons.person_outline_rounded,
-                            size: 30,
+                          radius: 30,
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer,
+                          child: Text(
+                            _name.trim().isEmpty
+                                ? 'T'
+                                : _name.trim().substring(0, 1).toUpperCase(),
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -374,7 +380,7 @@ class _YouScreenState extends State<YouScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Personal profile · this device',
+                                'Shown on new chapters · this device',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],
@@ -391,50 +397,116 @@ class _YouScreenState extends State<YouScreen> {
                 ),
                 const SizedBox(height: 16),
                 LayoutBuilder(
-                  builder: (context, box) => Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      for (final entry in [
-                        ('Started', started),
-                        ('Joined', joined),
-                        ('Saved', saved),
-                      ])
-                        SizedBox(
-                          width: (box.maxWidth - 24) / 3,
-                          child: Card(
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: () =>
-                                  _activity('${entry.$1} journeys', entry.$2),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 20,
-                                  horizontal: 4,
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      '${entry.$2.length}',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.headlineMedium,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      entry.$1,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall,
-                                    ),
-                                  ],
+                  builder: (context, box) {
+                    final stacked = box.maxWidth < 520;
+                    final tiles = [
+                      (
+                        'Started',
+                        started,
+                        Icons.auto_awesome_outlined,
+                        'Journeys you began',
+                      ),
+                      (
+                        'Joined',
+                        joined,
+                        Icons.edit_note_rounded,
+                        'Chapters you added',
+                      ),
+                      (
+                        'Saved',
+                        saved,
+                        Icons.bookmark_outline_rounded,
+                        'Stories you kept',
+                      ),
+                    ];
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        for (final entry in tiles)
+                          SizedBox(
+                            width: stacked
+                                ? box.maxWidth
+                                : (box.maxWidth - 24) / 3,
+                            child: Card(
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () =>
+                                    _activity('${entry.$1} journeys', entry.$2),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                    horizontal: 14,
+                                  ),
+                                  child: stacked
+                                      ? Row(
+                                          children: [
+                                            Icon(
+                                              entry.$3,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    entry.$1,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleMedium,
+                                                  ),
+                                                  Text(
+                                                    entry.$4,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Text(
+                                              '${entry.$2.length}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headlineMedium,
+                                            ),
+                                          ],
+                                        )
+                                      : Column(
+                                          children: [
+                                            Icon(
+                                              entry.$3,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              '${entry.$2.length}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headlineMedium,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              entry.$1,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall,
+                                            ),
+                                          ],
+                                        ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
+                      ],
+                    );
+                  },
                 ),
                 _section('Your activity', [
                   ListTile(
